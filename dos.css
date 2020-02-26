@@ -1,0 +1,119 @@
+body {
+  /*background-color: rgb(20,26,58);*/
+  /*background-color: rgb(0,0,0);*/
+    height: 100vh;
+    background:
+      radial-gradient(
+        circle at center,
+        #032c29 10%,
+        #000000 
+      );
+      background-repeat: no-repeat;
+  
+  font-family: Helvetica, sans-serif;
+}
+
+input[type=text] {
+  border: 2px solid rgba(127,255,255,0.75);
+  border-radius: 4px;
+  padding: 4px 6px;
+  background-color: rgba(0,0,0,0);
+  color: rgb(0, 254, 252);
+  text-align:center;
+}
+
+#myBar {
+  width: 10%;
+  height: 30px;
+  background-color: #4CAF50;
+  text-align: center; /* To center it horizontally (if you want) */
+  line-height: 30px; /* To center it vertically */
+  color: white;
+}
+
+.margin-1 {
+  margin-left: 1cm;
+  margin-top: 1cm;
+  margin-bottom: 1cm;
+  color:rgba(127,255,255,0.75);
+}
+
+#inputDiv button{
+  margin-left: 10px;
+}
+
+h1 {
+  margin-left:1cm;
+  color:rgba(127,255,255,0.9);
+}
+
+
+button {
+	color: rgba(127,255,255,0.75);
+	background: transparent;
+	outline: 1px solid rgba(127,255,255,0.75);
+	border: 0px;
+	padding: 5px 10px;
+	cursor: pointer;
+}
+button:hover {
+	background-color: rgba(0,255,255,0.5);
+}
+button:active {
+	color: #000000;
+	background-color: rgba(0,255,255,0.75);
+}
+
+
+#logo img{
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+	max-width: 25%;
+  height: auto;
+  background: transparent;
+  /*border-style: solid;
+  border-width: 1px;
+  border-color:rgba(127,255,255,0.75);*/
+}
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  padding-top: 200px; /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: rgba(0,0,0);
+  color: rgba(127,255,255,0.75);
+  margin: auto;
+  padding: 20px;
+  border: 1px solid rgba(127,255,255,0.75);
+  width: 80%;
+}
+
+/* The Close Button */
+.close {
+  color: rgba(127,255,255,0.75);
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: rgba(0,255,255,1.0);
+  text-decoration: none;
+  cursor: pointer;
+}
+
