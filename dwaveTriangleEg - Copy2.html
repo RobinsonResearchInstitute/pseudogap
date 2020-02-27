@@ -2,6 +2,7 @@
 <html>
         
     <head>
+	<meta charset="UTF-8" />
             <link rel="stylesheet" href="dos.css">
             <script src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.js"></script>
 			<title>Density of States</title>
@@ -229,7 +230,7 @@ Eg: <input type="text" id="EgField">
             }
 			dos[i]=(N*dth*4.0/Math.PI);
             NSdos[i] =(N2*dth*4.0/Math.PI);
-            console.log(NSdos[i]);
+            //console.log(NSdos[i]);
 		}
 		
 	}
@@ -248,7 +249,7 @@ Eg: <input type="text" id="EgField">
 			a = Resqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
 			b = Imsqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
 			x = Zagm(1.0,a,b);
-			console.log(x);
+			//console.log(x);
 			if(Math.abs(x[0])>0 || Math.abs(x[1])>0) N = x[0]/(Math.pow(x[0],2)+Math.pow(x[1],2));
 			
 			dos[i]=N;
@@ -458,7 +459,7 @@ function Imsqrt(Re,Im){
             c = 2.0*dfdt(E,Delta,T);
             if(isNaN(c)) c=0;
             d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
-            if(isNaN(d)) console.log(d);
+            //if(isNaN(d)) console.log(d);
             sum+=(a+b)*(c+d);
             }
             }
@@ -524,8 +525,88 @@ function Imsqrt(Re,Im){
         let pg = 0;
         let ns = 0;
         let x = 0;
+		
+		th = th1;
+		pg = Eg_*(1.0-th/thc_);
+		del = d0*Math.cos(2.0*th);
+		if(pg<0){
+			pg = 0;
+		}
+		E1 = pg;
+		E2 = 0.0015*T;
+		if(E1>E2){
+			//console.log(pg+" "+E2);
+			E2=2.0*E1;
+		}
+		dE = (E2-E1)/(NE-1);
+		
+		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+		f = fermi(x,0,T);
+		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+		if(!isNaN(fw)){
+			sum += 0.5*fw*dE;
+		}
+		
+		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+		f = fermi(x,0,T);
+		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+		if(!isNaN(fw)){
+			sum += 0.5*fw*dE;
+		}
 
-        for(let j = 0; j<Nth; j++){
+		for(let i = 1; i<NE-1; i++){                
+			t = E1+i*dE;               
+			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
+			f = fermi(x,0,T);
+			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+			if(!isNaN(fw)){
+				sum += fw*dE;
+			}
+			
+		}
+		
+		
+		th = th2;
+		pg = Eg_*(1.0-th/thc_);
+		del = d0*Math.cos(2.0*th);
+		if(pg<0){
+			pg = 0;
+		}
+		E1 = pg;
+		E2 = 0.0015*T;
+		if(E1>E2){
+			//console.log(pg+" "+E2);
+			E2=2.0*E1;
+		}
+		dE = (E2-E1)/(NE-1);
+		
+		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+		f = fermi(x,0,T);
+		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+		if(!isNaN(fw)){
+			sum += 0.5*fw*dE;
+		}
+		
+		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+		f = fermi(x,0,T);
+		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+		if(!isNaN(fw)){
+			sum += 0.5*fw*dE;
+		}
+
+		for(let i = 1; i<NE-1; i++){                
+			t = E1+i*dE;               
+			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
+			f = fermi(x,0,T);
+			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+			if(!isNaN(fw)){
+				sum += fw*dE;
+			}
+			
+		}
+		
+
+        for(let j = 1; j<Nth-1; j++){
             th = th1+j*dth;
             pg = Eg_*(1.0-th/thc_);
             del = d0*Math.cos(2.0*th);
@@ -539,22 +620,28 @@ function Imsqrt(Re,Im){
                 E2=2.0*E1;
             }
             dE = (E2-E1)/(NE-1);
+			
+			x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+			f = fermi(x,0,T);
+			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+			if(!isNaN(fw)){
+				sum += 0.5*fw*dE;
+			}
+			
+			x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+			f = fermi(x,0,T);
+			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+			if(!isNaN(fw)){
+				sum += 0.5*fw*dE;
+			}
 
-            for(let i = 0; i<NE; i++){
-                
-                t = E1+i*dE;
-                
+            for(let i = 1; i<NE-1; i++){                
+                t = E1+i*dE;               
                 x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-                ns = 1.0;
-                /*
-                if(Math.abs(t)<=pg){   
-                    ns = pg;
-                }
-                */
                 f = fermi(x,0,T);
                 fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
                 if(!isNaN(fw)){
-                    sum += ns*fw*dE;
+                    sum += fw*dE;
                 }
                 
             }
@@ -745,14 +832,14 @@ function Imsqrt(Re,Im){
 
 
     function download_csv() {
-        var csv = 'E,Dos\n';
+        var csv = 'E,SCDos,NSDos\n';
         //data.forEach(function(row) {
                 //csv += row.join(',');
                 //csv += "\n";
         //});
 		var i = 0;
 		for(i = 0; i<NE; i++){
-			csv+=energy[i]+','+dos[i]+'\n';
+			csv+=energy[i]+','+dos[i]+','+NSdos[i]+'\n';
 		}
 		
      
@@ -1016,6 +1103,7 @@ calculateDF();
 calculateDt();
 calculateLvsT();
 setTChart(gamma_,'Gamma','mJ/mol/K\u00B2');
+setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
 }
 
 document.getElementById("alphaField").value = alpha_;
@@ -1034,6 +1122,7 @@ calculateDF();
 calculateDt();
 calculateLvsT();
 makeTChart(gamma_);
+setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
 Tchart_.canvas.parentNode.style.height = '50%';
 Tchart_.canvas.parentNode.style.width = '40%';
 //chart.data.labels = energy;
