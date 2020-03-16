@@ -1,4 +1,4 @@
-<a href="dwaveEg.html">D-wave Pseudogap</a>
+<a href="dwaveEg.html"><i>d</i>-wave Pseudogap</a>
 <br>
 <a href="dwaveTriangleEg - Copy2.html">Triangular Pseudogap</a>
 <br>
