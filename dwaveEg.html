@@ -2,14 +2,14 @@
 <html>
         
     <head>
-	<meta charset="UTF-8" />
+        <meta charset="UTF-8" />
             <link rel="stylesheet" href="dos.css">
             <script src = "js/Chart.js"></script>
 			<title>Density of States</title>
     </head>
 <body bgcolor='#000000'>
 
-<h1>2D <i>d</i>-wave &#x3b1-Model with Triangular Pseudogap</h1>
+<h1>2D <i>d</i>-wave &#x3b1-Model with <i>d</i>-wave Pseudogap</h1>
 	<div class="topright" style="position: absolute; right:5%; top:30%; height:40vh; width:80vw">     
 <canvas id="myChart"></canvas>
 </div>
@@ -44,9 +44,7 @@ Alpha:
 <br>
 <br>
 Eg: <input type="text" id="EgField">
-&theta;c: <input type="text" id="thcField">
 </div>
-
 
 <!-- The Modal -->
 <div id="myModal" class="modal">
@@ -59,10 +57,7 @@ Eg: <input type="text" id="EgField">
   
   </div>
 
-
-
-<!--Required for downloading csv-->
-    <div id="container" style="display:none;"></div>
+<div id="container" style="display:none;"></div>
 
 <div id="logo">
     <a href="https://www.wgtn.ac.nz/robinson">
@@ -77,7 +72,6 @@ Eg: <input type="text" id="EgField">
     let alpha_ = alphaBCS_;
 	let Tc_ = 80.0;
     let Eg_ = 2.0*alphaBCS_*kb_*Tc_;
-    let thc_ = Math.PI/4.0;
     
 
 	let chart;
@@ -131,7 +125,6 @@ Eg: <input type="text" id="EgField">
     function setAlpha(){
         alpha_ = document.getElementById("alphaField").value;
         Eg_ = document.getElementById("EgField").value*alphaBCS_*kb_*Tc_;
-        thc_ = document.getElementById("thcField").value*Math.PI/180.0;
         runCalculations();
     }
 
@@ -144,93 +137,58 @@ Eg: <input type="text" id="EgField">
         let th = 0;
 		var E = E1;
 		var N = 2.0;
-        var ns = 1.0;
-        var nn = 0;
 		var delta = alpha_*kb_*Tc_;
         var deltatheta = 0;
         var N2 = 0;
-       
-        var pg = 0;
+
 		var x;
 		for(let i = 0; i<NE; i++){
 			E = energy[i];
             N = 0;
             N2 = 0;
             th = th1;
-            pg = Eg_*(1.0-th/thc_);
-
             deltatheta = delta*Math.cos(2.0*th);
-            x = Math.pow(E,2)-Math.pow(deltatheta,2);
-            nn = 1.0;
-            if(Math.abs(E)<pg)
-                    nn = 0;
-                N2+=0.5*nn;    
-
-            if(x>0) {
-                ns = 1.0;                
-                if(Math.sqrt(x)<pg){   
-                    ns = 0;
-                }
-                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);
-               
-            }
+            x = Math.pow(E,2)-Math.pow(deltatheta,2)-Math.pow(Eg_*Math.cos(2.0*th),2);
+            if(x>0) N += 0.5*Math.abs(E)/Math.sqrt(x);
             if(E==0 && x==0){
-                if(E>=pg){
-                N+= 0.5;
-                //N2+=0.5;
-                }
+                    N+= 0.5;
             }
+            x = Math.pow(E,2)-Math.pow(Eg_*Math.cos(2.0*th),2);
+            if(x>0) N2 += 0.5*Math.abs(E)/Math.sqrt(x);
+            if(E==0 && x==0){
+                    N2+=0.5;
+                }
+
             th = th1+(Nth-1)*dth;
-            pg = Eg_*(1.0-th/thc_);
             deltatheta = delta*Math.cos(2.0*th);
-            x = Math.pow(E,2)-Math.pow(deltatheta,2);
-            nn = 1.0;
-            if(Math.abs(E)<pg)
-                    nn = 0;
-                N2+=0.5*nn;   
-                
-            if(x>0) {
-                ns = 1.0;
-                if(Math.sqrt(x)<pg){   
-                    ns = 0;
-                }
-                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);
-            }
+            x = Math.pow(E,2)-Math.pow(deltatheta,2)-Math.pow(Eg_*Math.cos(2.0*th),2);
+            if(x>0) N += 0.5*Math.abs(E)/Math.sqrt(x);
             if(E==0 && x==0){
-                if(E>=pg){
-                N+= 0.5;
-                    //N2+=0.5;
-                }
+                    N+= 0.5;
             }
-            
+            x = Math.pow(E,2)-Math.pow(Eg_*Math.cos(2.0*th),2);
+            if(x>0) N2 += 0.5*Math.abs(E)/Math.sqrt(x);
+            if(E==0 && x==0){
+                    N2+=0.5;
+                }
 
 			for(let j = 1; j<Nth-1; j++){
                 th = th1+j*dth;
-                pg = Eg_*(1.0-th/thc_);
                 deltatheta = delta*Math.cos(2.0*th);
-                x = Math.pow(E,2)-Math.pow(deltatheta,2);
-                nn = 1.0;
-                if(Math.abs(E)<pg)
-                    nn = 0;
-                    N2+=1.0*nn;
-                if(x>0){
-                    ns = 1.0;
-                    if(Math.sqrt(x)<pg){   
-                        ns = 0;
-                    }   
-                    N += ns*Math.abs(E)/Math.sqrt(x);
-                    //N = fermi(E,0,0);
-                }
+                x = Math.pow(E,2)-Math.pow(deltatheta,2)-Math.pow(Eg_*Math.cos(2.0*th),2);
+                if(x>0) N += Math.abs(E)/Math.sqrt(x);
                 if(E==0 && x==0){
-                    if(E>=pg){
-                N+= 1.0;
-                //N2+=1.0;
-                    }
-            }
+                    N+= 1.0;
+                }
+                x = Math.pow(E,2)-Math.pow(Eg_*Math.cos(2.0*th),2);
+                if(x>0) N2 += Math.abs(E)/Math.sqrt(x);
+                //N = fermi(E,0,0);
+                if(E==0 && x==0){
+                    N2+=1.0;
+                }
             }
 			dos[i]=(N*dth*4.0/Math.PI);
-            NSdos[i] =(N2*dth*4.0/Math.PI);
-            //console.log(NSdos[i]);
+            NSdos[i]=(N2*dth*4.0/Math.PI);
 		}
 		
 	}
@@ -249,7 +207,7 @@ Eg: <input type="text" id="EgField">
 			a = Resqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
 			b = Imsqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
 			x = Zagm(1.0,a,b);
-			//console.log(x);
+			console.log(x);
 			if(Math.abs(x[0])>0 || Math.abs(x[1])>0) N = x[0]/(Math.pow(x[0],2)+Math.pow(x[1],2));
 			
 			dos[i]=N;
@@ -312,8 +270,8 @@ function Imsqrt(Re,Im){
         return 1.0/(Math.exp((E-mu)/kb_/T)+1.0);
     }
 
-    function dfdt(t,Delta,T){
-        let x = Math.sqrt(Math.pow(t,2)+Math.pow(Delta,2));
+    function dfdt(t,Delta,Eg,T){
+        let x = Math.sqrt(Math.pow(t,2)+Math.pow(Delta,2)+Math.pow(Eg,2));
         let y = Math.exp(x/kb_/T);
         return -t*y/(Math.pow(y+1,2)*x*kb_*T);
     }
@@ -325,85 +283,38 @@ function Imsqrt(Re,Im){
 
     function calculateLvsT(){
         let th1 = 0;
-        let th2 = Math.PI/4.0;
+        let th2 = Math.PI/2.0;
         const Nth = 200;
         let dth = (th2-th1)/(Nth-1);
         let th = 0;
         let d0 = 0;
-        let pg = 0;
         for(let i = 0; i<NT_; i++){
             d0 = delta(alpha_,Tc_,temperature_[i]);
             for(let j = 0; j<Nth; j++){
                 th = th1+j*dth;
-                pg = Eg_*(1.0-th/thc_);
-                if(pg<0){
-                    pg = 0;
-                }
-                lambda_[i] += calculateLambda(0.02,d0*Math.cos(2.0*th),pg, temperature_[i]);
+                lambda_[i] += calculateLambda(0.02,d0*Math.cos(2.0*th),Eg_*Math.cos(2.0*th),temperature_[i]);
             }
-            lambda_[i] = lambda_[i]*dth/Math.PI*4.0;  
-            //console.log(temperature_[i]);  
+            lambda_[i]*=dth/Math.PI*2.0;    
         }
     }
 
 
-    function calculateCLambda(mu, Delta, pg, T){
+    function calculateCLambda(mu, Delta, T){
         let E = 0;
         let x = 0;
         let sum = 0;
         for(let i = 0; i<NE; i++){
-            E = pg+i*dE;
+            E = E1+i*dE;
             x = Math.pow(E,2)-Math.pow(Delta,2);
             if(x>0){
                 sum+=Math.abs(E)/Math.sqrt(x)*dfdE(E,T);
             }
             
         }
-        return sum*dE;
+        return 1.0+sum*dE;
     }
 
-    function calculateKLambda(mu, Delta, pg, T){
-
-        let ek = 0;
-        let k1 = 0;
-        let k2 = Math.PI;
-        let Nk = 100;
-        let dk = (k2-k1)/(Nk-1);
-        let kx = 0;
-        let ky = 0;
-        let Ek = 0;
-        let vk = 0;
-        let sum = 0;
-        let x = 0;
-        let y = 0;
-        let z= 0;
-
-        for(let i = 0; i<Nk; i++){
-            kx = k1+i*dk;
-            for(let j = 0; j<Nk; j++){
-                ky = k1+j*dk;
-                ek = 0.05*(kx*kx+ky*ky)-0.2;
-                vk = kx;
-                if(Math.abs(ek)>=pg){
-                Ek = Math.sqrt(Math.pow(ek,2)+Math.pow(Delta,2));
-                if(Ek!=0){
-                    x= Math.pow(vk*Delta/Ek,2)*2.0*dfdE(Ek,T);
-                    y = Math.pow(vk*Delta/Ek,2)*(1.0-2.0*fermi(Ek,0,T))/Ek;
-                    if(!isNaN(x)){
-                        sum+=x;
-                    }
-                    if(!isNaN(y)){
-                        sum+=y;
-                    }
-                }
-                }
-            }
-        }
-        //console.log(sum);
-        return sum*=Math.pow(dk,2);
-    }
-
-    function calculateLambda(mu, Delta, pg, T){
+    function calculateLambda(mu, Delta, Eg, T){
         E1 = -0.1;
         E2 = -E1;
         let NEL = 2*NE;
@@ -414,54 +325,48 @@ function Imsqrt(Re,Im){
         let c = 0;
         let d = 0;
         let x = 0;
+        let g = Math.pow(Delta,2)+Math.pow(Eg,2);
         let sum = 0;
 
         E = E1;
-        if(Math.abs(E)>=pg){
-            if(E==0){
-                sum+=-0.5*2.0*mu*(Math.exp(Delta/kb_/T)/Math.pow(Math.exp(Delta/kb_/T)+1.0,2)/kb_/T)+0.5*mu/Delta*(1.0-2.0*fermi(Delta,0,T));
+            if(E==0){                
+                sum+=-0.5*2.0*mu*Math.pow(Delta,2)*Math.exp(Math.sqrt(g)/kb_/T)/Math.pow(Math.exp(Math.sqrt(g)/kb_/T)+1.0,2)/kb_/T/g+0.5*mu/Math.pow(Delta,2)/Math.pow(g,1.5)*(1.0-2.0*fermi(Math.sqrt(g),0,T));
             }else{
-            x = Math.sqrt(Math.pow(E,2)+Math.pow(Delta,2));
+            x = Math.sqrt(Math.pow(E,2)+g);
             a = Math.pow(Delta,2)/x;
             b = mu*Math.pow(Delta,2)/E/x;
-            c = 2.0*dfdt(E,Delta,T);
+            c = 2.0*dfdt(E,Delta,Eg,T);
             if(isNaN(c)) c=0;
             d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
             sum+=0.5*(a+b)*(c+d);
             }
-        }
 
             E = E2;
-            if(Math.abs(E)>=pg){
             if(E==0){
-                sum+=-0.5*2.0*mu*(Math.exp(Delta/kb_/T)/Math.pow(Math.exp(Delta/kb_/T)+1.0,2)/kb_/T)+0.5*mu/Delta*(1.0-2.0*fermi(Delta,0,T));
+                sum+=-0.5*2.0*mu*Math.pow(Delta,2)*Math.exp(Math.sqrt(g)/kb_/T)/Math.pow(Math.exp(Math.sqrt(g)/kb_/T)+1.0,2)/kb_/T/g+0.5*mu/Math.pow(Delta,2)/Math.pow(g,1.5)*(1.0-2.0*fermi(Math.sqrt(g),0,T));
             }else{
-            x = Math.sqrt(Math.pow(E,2)+Math.pow(Delta,2));
+            x = Math.sqrt(Math.pow(E,2)+g);
             a = Math.pow(Delta,2)/x;
             b = mu*Math.pow(Delta,2)/E/x;
-            c = 2.0*dfdt(E,Delta,T);
+            c = 2.0*dfdt(E,Delta,Eg,T);
             if(isNaN(c)) c=0;
             d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
             sum+=0.5*(a+b)*(c+d);
             }    
-            }
-
 
         for(let i = 1; i<NEL-1; i++){
             E = E1+i*dE;
-            if(Math.abs(E)>=pg){
             if(E==0){
-                sum+=-2.0*mu*(Math.exp(Delta/kb_/T)/Math.pow(Math.exp(Delta/kb_/T)+1.0,2)/kb_/T)+mu/Delta*(1.0-2.0*fermi(Delta,0,T));
+                sum+=-2.0*mu*Math.pow(Delta,2)*Math.exp(Math.sqrt(g)/kb_/T)/Math.pow(Math.exp(Math.sqrt(g)/kb_/T)+1.0,2)/kb_/T/g+mu/Math.pow(Delta,2)/Math.pow(g,1.5)*(1.0-2.0*fermi(Math.sqrt(g),0,T));
             }else{
-            x = Math.sqrt(Math.pow(E,2)+Math.pow(Delta,2));
+            x = Math.sqrt(Math.pow(E,2)+g);
             a = Math.pow(Delta,2)/x;
             b = mu*Math.pow(Delta,2)/E/x;
-            c = 2.0*dfdt(E,Delta,T);
+            c = 2.0*dfdt(E,Delta,Eg,T);
             if(isNaN(c)) c=0;
             d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
-            //if(isNaN(d)) console.log(d);
+            if(isNaN(d)) console.log(d);
             sum+=(a+b)*(c+d);
-            }
             }
         }
         return sum*=dE;
@@ -516,279 +421,90 @@ function Imsqrt(Re,Im){
         const Nth = 200;
         let dth = (th2-th1)/(Nth-1);
         let th = 0;
-        let t = 0;
-        let f = 0;
-        let fw = 0;
-        let sum = 0;
-        let del = 0;
-        let d0 = delta(alpha,Tc,T);
-        let pg = 0;
-        let ns = 0;
-        let x = 0;
-		
-		th = th1;
-		pg = Eg_*(1.0-th/thc_);
-		del = d0*Math.cos(2.0*th);
-		if(pg<0){
-			pg = 0;
-		}
-		E1 = pg;
-		E2 = 0.0015*T;
-		if(E1>E2){
-			//console.log(pg+" "+E2);
-			E2=2.0*E1;
-		}
-		dE = (E2-E1)/(NE-1);
-		
-		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-		
-		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-
-		for(let i = 1; i<NE-1; i++){                
-			t = E1+i*dE;               
-			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += fw*dE;
-			}
-			
-		}
-		
-		
-		th = th2;
-		pg = Eg_*(1.0-th/thc_);
-		del = d0*Math.cos(2.0*th);
-		if(pg<0){
-			pg = 0;
-		}
-		E1 = pg;
-		E2 = 0.0015*T;
-		if(E1>E2){
-			//console.log(pg+" "+E2);
-			E2=2.0*E1;
-		}
-		dE = (E2-E1)/(NE-1);
-		
-		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-		
-		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-
-		for(let i = 1; i<NE-1; i++){                
-			t = E1+i*dE;               
-			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += fw*dE;
-			}
-			
-		}
-		
-
-        for(let j = 1; j<Nth-1; j++){
-            th = th1+j*dth;
-            pg = Eg_*(1.0-th/thc_);
-            del = d0*Math.cos(2.0*th);
-            if(pg<0){
-                pg = 0;
-            }
-            E1 = pg;
-            E2 = 0.0015*T;
-            if(E1>E2){
-                //console.log(pg+" "+E2);
-                E2=2.0*E1;
-            }
-            dE = (E2-E1)/(NE-1);
-			
-			x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += 0.5*fw*dE;
-			}
-			
-			x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += 0.5*fw*dE;
-			}
-
-            for(let i = 1; i<NE-1; i++){                
-                t = E1+i*dE;               
-                x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-                f = fermi(x,0,T);
-                fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-                if(!isNaN(fw)){
-                    sum += fw*dE;
-                }
-                
-            }
-
-        }    
-            
-         return sum*=(-dth*4.0/Math.PI*2.0*1E3*8.3145);
-
-    }
-
-
-    function S_old(alpha, Tc, T){
-        E1 = -0.0015*T;
-        E2 = -E1;
-        dE = (E2-E1)/(NE-1);
-        let E = 0;
-        let th1 = 0;
-        let th2 = Math.PI/4.0;
-        const Nth = 200;
-        let dth = (th2-th1)/(Nth-1);
-        let th = 0;
         
         let f = 0;
         let fw = 0;
         let sum = 0;
         let del = 0;
         let d0 = delta(alpha,Tc,T);
-        let pg = 0;
-        let ns = 0;
         
-            pg = Eg_*(1.0-th1/th2);
             del = d0*Math.cos(2.0*th1);    
-            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E1)<pg){   
-                    ns = pg;
-                }
+            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
             f = fermi(E,0,T);
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             //if(f>0)
             if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
+            sum += 0.5*0.5*fw;
     
-            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E2)<pg){   
-                    ns = pg;
-                }
+            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
             f = fermi(E,0,T);
             //if(f>0)
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
+            sum += 0.5*0.5*fw;
 
             for(let i = 1; i<NE-1; i++){  
-                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2));
-                ns = 1.0;
-                if(Math.abs(E1+i*dE)<pg){   
-                    ns = pg;
-                }
+                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
                 f = fermi(E,0,T);
                 fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
                 //if(f>0)
                 if(!isNaN(fw))
-                sum+=0.5*ns*fw;
+                sum+=0.5*fw;
             }
 
-            pg = Eg_*(1.0-th2/th2);
             del = d0*Math.cos(2.0*th2);    
-            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E1)<pg){   
-                    ns = pg;
-                }
+            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
             f = fermi(E,0,T);
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             //if(f>0)
             if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
+            sum += 0.5*0.5*fw;
     
-            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E2)<pg){   
-                    ns = pg;
-                }
+            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
             f = fermi(E,0,T);
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             //if(f>0)
             if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
+            sum += 0.5*0.5*fw;
 
             for(let i = 1; i<NE-1; i++){  
-                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2));
-                ns = 1.0;
-                if(Math.abs(E1+i*dE)<pg){   
-                    ns = pg;
-                }
+                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
                 f = fermi(E,0,T);
                 fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
                 //if(f>0)
                 if(!isNaN(fw))
-                sum+=0.5*ns*fw;
+                sum+=0.5*fw;
             }
 
         for(let j = 1; j<Nth-1; j++){
             th = th1+j*dth;
-            pg = Eg_*(1.0-th/th2);
             del = d0*Math.cos(2.0*th);    
-            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E1)<pg){   
-                    ns = pg;
-                }
+            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
             f = fermi(E,0,T);
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             //if(f>0)
             if(!isNaN(fw))
-            sum += 0.5*ns*fw;
+            sum += 0.5*fw;
     
-            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E2)<pg){   
-                    ns = pg;
-                }
+            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
             f = fermi(E,0,T);
             //if(f>0)
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             if(!isNaN(fw))
-            sum += 0.5*ns*fw;
+            sum += 0.5*fw;
 
             for(let i = 1; i<NE-1; i++){  
-                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2));
-                ns = 1.0;
-                if(Math.abs(E1+i*dE)<pg){   
-                    ns = pg;
-                }
+                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
                 f = fermi(E,0,T);
                 fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
                 if(!isNaN(fw))
-                sum+=ns*fw;
+                sum+=fw;
                 //if(isNaN(sum)) console.log(f+' '+T);
             }
         }
          return sum*=(-dE*dth*4.0/Math.PI*2.0*1E3*8.3145);
 
     }
-
 
     function Sn(T){
         return S(0,Tc_,T);
@@ -889,7 +605,7 @@ chart = new Chart(ctx, {
             //backgroundColor: 'rgb(255, 99, 132)',
             borderColor: 'rgb(0, 254, 252)',
             data: data,
-        }, 
+        },
         {
             label: 'Normal State',
 			lineTension:0,
@@ -950,7 +666,7 @@ chart = new Chart(ctx, {
                                fontColor: "rgb(0, 254, 252)",
                                //fontSize: 14
 							   min: 0,
-								//max: 1.2,
+								//max: 3,
 								//stepSize: 1,
                               }
                         },
@@ -1091,7 +807,6 @@ function setEChart2(data,title){
     chart.update();
 }
 
-
 function runCalculations(){
 computeDos();
 setEChart(dos,'Density of States');
@@ -1108,7 +823,6 @@ setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
 
 document.getElementById("alphaField").value = alpha_;
 document.getElementById("EgField").value = 2.0;
-document.getElementById("thcField").value = 45;
 initArrays();
 computeDos();
 makeChart(dos);
@@ -1167,7 +881,6 @@ function setProgress(amount){
       }
     }
     </script>
-
 
 </body>
 </html>

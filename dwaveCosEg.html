@@ -2,14 +2,14 @@
 <html>
         
     <head>
-	<meta charset="UTF-8" />
+    <meta charset="UTF-8" />
             <link rel="stylesheet" href="dos.css">
             <script src = "js/Chart.js"></script>
 			<title>Density of States</title>
     </head>
 <body bgcolor='#000000'>
 
-<h1>2D <i>d</i>-wave &#x3b1-Model with Triangular Pseudogap</h1>
+<h1>2D <i>d</i>-wave &#x3b1-Model with cos(2&theta;) Pseudogap</h1>
 	<div class="topright" style="position: absolute; right:5%; top:30%; height:40vh; width:80vw">     
 <canvas id="myChart"></canvas>
 </div>
@@ -157,8 +157,10 @@ Eg: <input type="text" id="EgField">
             N = 0;
             N2 = 0;
             th = th1;
-            pg = Eg_*(1.0-th/thc_);
-
+            //pg = Eg_*(1.0-th/thc_);
+            pg = 0;
+                if(th<thc_)
+            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
             deltatheta = delta*Math.cos(2.0*th);
             x = Math.pow(E,2)-Math.pow(deltatheta,2);
             nn = 1.0;
@@ -167,52 +169,54 @@ Eg: <input type="text" id="EgField">
                 N2+=0.5*nn;    
 
             if(x>0) {
-                ns = 1.0;                
+                ns = 1.0;
                 if(Math.sqrt(x)<pg){   
                     ns = 0;
                 }
-                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);
-               
+                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);    
             }
             if(E==0 && x==0){
-                if(E>=pg){
+                if(E>=pg)
                 N+= 0.5;
-                //N2+=0.5;
-                }
             }
             th = th1+(Nth-1)*dth;
-            pg = Eg_*(1.0-th/thc_);
+            //pg = Eg_*(1.0-th/thc_);
+            pg = 0;
+                if(th<thc_)
+            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
             deltatheta = delta*Math.cos(2.0*th);
             x = Math.pow(E,2)-Math.pow(deltatheta,2);
             nn = 1.0;
             if(Math.abs(E)<pg)
                     nn = 0;
                 N2+=0.5*nn;   
-                
+
             if(x>0) {
                 ns = 1.0;
                 if(Math.sqrt(x)<pg){   
                     ns = 0;
                 }
-                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);
+                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);   
             }
             if(E==0 && x==0){
-                if(E>=pg){
+                if(E>=pg)
                 N+= 0.5;
-                    //N2+=0.5;
-                }
             }
             
 
 			for(let j = 1; j<Nth-1; j++){
                 th = th1+j*dth;
-                pg = Eg_*(1.0-th/thc_);
+                //pg = Eg_*(1.0-th/thc_);
+                pg = 0;
+                if(th<thc_)
+                pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
                 deltatheta = delta*Math.cos(2.0*th);
                 x = Math.pow(E,2)-Math.pow(deltatheta,2);
                 nn = 1.0;
                 if(Math.abs(E)<pg)
-                    nn = 0;
-                    N2+=1.0*nn;
+                        nn = 0;
+                    N2+=nn;   
+
                 if(x>0){
                     ns = 1.0;
                     if(Math.sqrt(x)<pg){   
@@ -222,15 +226,12 @@ Eg: <input type="text" id="EgField">
                     //N = fermi(E,0,0);
                 }
                 if(E==0 && x==0){
-                    if(E>=pg){
+                    if(E>=pg)
                 N+= 1.0;
-                //N2+=1.0;
-                    }
             }
             }
 			dos[i]=(N*dth*4.0/Math.PI);
             NSdos[i] =(N2*dth*4.0/Math.PI);
-            //console.log(NSdos[i]);
 		}
 		
 	}
@@ -249,7 +250,7 @@ Eg: <input type="text" id="EgField">
 			a = Resqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
 			b = Imsqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
 			x = Zagm(1.0,a,b);
-			//console.log(x);
+			console.log(x);
 			if(Math.abs(x[0])>0 || Math.abs(x[1])>0) N = x[0]/(Math.pow(x[0],2)+Math.pow(x[1],2));
 			
 			dos[i]=N;
@@ -335,14 +336,15 @@ function Imsqrt(Re,Im){
             d0 = delta(alpha_,Tc_,temperature_[i]);
             for(let j = 0; j<Nth; j++){
                 th = th1+j*dth;
-                pg = Eg_*(1.0-th/thc_);
-                if(pg<0){
-                    pg = 0;
-                }
+                //pg = Eg_*(1.0-th/thc_);
+                pg = 0;
+                if(th<thc_)
+                    pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
+               
                 lambda_[i] += calculateLambda(0.02,d0*Math.cos(2.0*th),pg, temperature_[i]);
             }
             lambda_[i] = lambda_[i]*dth/Math.PI*4.0;  
-            //console.log(temperature_[i]);  
+            console.log(temperature_[i]);  
         }
     }
 
@@ -459,7 +461,7 @@ function Imsqrt(Re,Im){
             c = 2.0*dfdt(E,Delta,T);
             if(isNaN(c)) c=0;
             d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
-            //if(isNaN(d)) console.log(d);
+            if(isNaN(d)) console.log(d);
             sum+=(a+b)*(c+d);
             }
             }
@@ -506,6 +508,7 @@ function Imsqrt(Re,Im){
         }
     }
 
+
     function S(alpha, Tc, T){
         E1 = 0;
         E2 = 0.0015*T;
@@ -527,11 +530,10 @@ function Imsqrt(Re,Im){
         let x = 0;
 		
 		th = th1;
-		pg = Eg_*(1.0-th/thc_);
+        pg = 0;
+        if(th<thc_)
+            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
 		del = d0*Math.cos(2.0*th);
-		if(pg<0){
-			pg = 0;
-		}
 		E1 = pg;
 		E2 = 0.0015*T;
 		if(E1>E2){
@@ -567,11 +569,10 @@ function Imsqrt(Re,Im){
 		
 		
 		th = th2;
-		pg = Eg_*(1.0-th/thc_);
+		pg = 0;
+        if(th<thc_)
+            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
 		del = d0*Math.cos(2.0*th);
-		if(pg<0){
-			pg = 0;
-		}
 		E1 = pg;
 		E2 = 0.0015*T;
 		if(E1>E2){
@@ -608,11 +609,11 @@ function Imsqrt(Re,Im){
 
         for(let j = 1; j<Nth-1; j++){
             th = th1+j*dth;
-            pg = Eg_*(1.0-th/thc_);
+            pg = 0;
+            if(th<thc_)
+                pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
             del = d0*Math.cos(2.0*th);
-            if(pg<0){
-                pg = 0;
-            }
+            
             E1 = pg;
             E2 = 0.0015*T;
             if(E1>E2){
@@ -642,6 +643,69 @@ function Imsqrt(Re,Im){
                 fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
                 if(!isNaN(fw)){
                     sum += fw*dE;
+                }
+                
+            }
+
+        }    
+            
+         return sum*=(-dth*4.0/Math.PI*2.0*1E3*8.3145);
+
+    }
+
+
+
+    function S_old2(alpha, Tc, T){
+        E1 = 0;
+        E2 = 0.0015*T;
+        dE = (E2-E1)/(NE-1);
+        let E = 0;
+        let th1 = 0;
+        let th2 = Math.PI/4.0;
+        const Nth = 200;
+        let dth = (th2-th1)/(Nth-1);
+        let th = 0;
+        let t = 0;
+        let f = 0;
+        let fw = 0;
+        let sum = 0;
+        let del = 0;
+        let d0 = delta(alpha,Tc,T);
+        let pg = 0;
+        let ns = 0;
+        let x = 0;
+
+        for(let j = 0; j<Nth; j++){
+            th = th1+j*dth;
+            //pg = Eg_*(1.0-th/thc_);
+            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
+            del = d0*Math.cos(2.0*th);
+            if(pg<0){
+                pg = 0;
+            }
+            E1 = pg;
+            E2 = 0.0015*T;
+            if(E1>E2){
+                //console.log(pg+" "+E2);
+                E2=2.0*E1;
+            }
+            dE = (E2-E1)/(NE-1);
+
+            for(let i = 0; i<NE; i++){
+                
+                t = E1+i*dE;
+                
+                x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
+                ns = 1.0;
+                /*
+                if(Math.abs(t)<=pg){   
+                    ns = pg;
+                }
+                */
+                f = fermi(x,0,T);
+                fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
+                if(!isNaN(fw)){
+                    sum += ns*fw*dE;
                 }
                 
             }
@@ -950,7 +1014,7 @@ chart = new Chart(ctx, {
                                fontColor: "rgb(0, 254, 252)",
                                //fontSize: 14
 							   min: 0,
-								//max: 1.2,
+								//max: 3,
 								//stepSize: 1,
                               }
                         },
