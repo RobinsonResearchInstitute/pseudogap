@@ -9,7 +9,7 @@
     </head>
 <body bgcolor='#000000'>
 
-    <h1>2D <i>d</i>-wave &#x3b1-Model with <i>d</i>-wave Pseudogap</h1>
+    <h1>2D <i>d</i>-wave &#x3b1-Model with Triangular Pseudogap</h1>
 	<div class="topright" style="position: absolute; right:5%; top:30%; height:40vh; width:80vw">     
 <canvas id="myChart"></canvas>
 </div>
@@ -41,7 +41,7 @@ Alpha:
 <br>
 <br>
 Eg: <input type="text" id="EgField">
-<!--&theta;c: <input type="text" id="thcField">-->
+&theta;c: <input type="text" id="thcField">
 <br>
 <br>
 <div id="myProgress">
@@ -151,7 +151,7 @@ Eg: <input type="text" id="EgField">
         submitButton.disabled = true;
 
         // Create the worker.
-        worker = new Worker("js/dwaveEgWorker.js");
+        worker = new Worker("js/triangleWorker.js");
 
         // Hook up to the onMessage event, so you can receive messages
         // from the worker.
@@ -160,7 +160,7 @@ Eg: <input type="text" id="EgField">
         // Get the number range, and send it to the web worker.
         alpha_ = document.getElementById("alphaField").value;
         Eg_ = document.getElementById("EgField").value;//*alphaBCS_*kb_*Tc_;
-        thc_ = 45;//document.getElementById("thcField").value;//*Math.PI/180.0;
+        thc_ = document.getElementById("thcField").value;//*Math.PI/180.0;
 
         worker.postMessage(
         {   Tc: Tc_,
@@ -496,7 +496,7 @@ function setEChart2(data,title){
 
 document.getElementById("alphaField").value = alpha_;
 document.getElementById("EgField").value = 2.0;
-//document.getElementById("thcField").value = 45;
+document.getElementById("thcField").value = 45;
 initArrays();
 makeChart(dos_);
 setEChart2(NSdos_,'Normal State');

@@ -23,12 +23,12 @@ input[type=text] {
 }
 
 #myBar {
-  width: 10%;
-  height: 30px;
-  background-color: #4CAF50;
+  width: 0%;
+  height: 20px;
+  background-color:  rgba(0,255,255,0.5);
   text-align: center; /* To center it horizontally (if you want) */
-  line-height: 30px; /* To center it vertically */
-  color: white;
+  line-height: 20px; /* To center it vertically */
+  color: rgba(127,255,255,0.9);;
 }
 
 .margin-1 {
@@ -42,7 +42,7 @@ input[type=text] {
   margin-left: 10px;
 }
 
-h1 {
+h1,#status {
   margin-left:1cm;
   color:rgba(127,255,255,0.9);
 }
@@ -62,6 +62,10 @@ button:hover {
 button:active {
 	color: #000000;
 	background-color: rgba(0,255,255,0.75);
+}
+
+button:disabled{
+  background-color: rgba(100,100,100,0.5);
 }
 
 

@@ -20,18 +20,15 @@
 
 <div id="inputDiv" class='margin-1'>  
 
-<!--<div id="myProgress">
-  <div id="myBar">10%</div>
-</div>-->
+
  
 Alpha:
     <input type="text" id="alphaField">
-    <button onclick="setAlpha()">Submit</button>
+    <button id='submitButton' onclick="runCalculations()">Submit</button>
   
 
-
-<button onclick="setTChart(entropy_,'Entropy','mJ/mol/K');setTChart2(NSentropy_,'Normal State','mJ/mol/K')">Entropy</button> 
 <button onclick="setTChart(gamma_,'Gamma','mJ/mol/K&#xb2');setTChart2(NSgamma_,'Normal State','mJ/mol/K&#xb2')">Gamma</button>
+<button onclick="setTChart(entropy_,'Entropy','mJ/mol/K');setTChart2(NSentropy_,'Normal State','mJ/mol/K')">Entropy</button> 
 <button onclick="setTChart(DF_,'DeltaF','mJ/mol');setTChart2([],'','mJ/mol/K&#xb2')"">DeltaF</button>
 <button onclick="setTChart(gap_,'Gap','meV');setTChart2([],'','mJ/mol/K&#xb2')">Gap</button>
 <button onclick="setTChart(Dt_,'D(t)','');setTChart2([],'','mJ/mol/K&#xb2')">D(t)</button>
@@ -45,8 +42,17 @@ Alpha:
 <br>
 Eg: <input type="text" id="EgField">
 &theta;c: <input type="text" id="thcField">
+<br>
+<br>
+<div id="myProgress">
+    <div id="myBar">0%</div>
+  </div>
+
 </div>
 
+
+
+<div id="status"></div>
 
 <!-- The Modal -->
 <div id="myModal" class="modal">
@@ -72,25 +78,29 @@ Eg: <input type="text" id="EgField">
 
     <script>
     
-    const kb_ = 8.62e-5;
-    const alphaBCS_ = 2.14;
-    let alpha_ = alphaBCS_;
-	let Tc_ = 80.0;
-    let Eg_ = 2.0*alphaBCS_*kb_*Tc_;
-    let thc_ = Math.PI/4.0;
-    
+    const Tc_ = 80;
+    let alpha_ = 2.14;
+    let Eg_ = 2;
+    let thc_ = 45;
+    let E1_ = -0.1;
+    let E2_ = 0.1;
+    const NE_ = 201;
+    let dE_ = (E2_-E1_)/(NE_-1);
+
+    let T1_ = 0;
+    const NT_ = 301;
+    let nTc_ = 80;//0.8*(NT_-1);
+    let dT_ = (Tc_-T1_)/nTc_;
+    let T2_ = T1_+(NT_-1)*dT_;
+
 
 	let chart;
     let Tchart_;
-	let energy = [];
-	let dos = [];
-    let NSdos=[];
-	let E1 = -0.1;
-    let E2 = 0.1;
-    const NE = 201;
-    let dE = (E2-E1)/(NE-1);
 
-    let gap_ = [];
+	let energy = [];
+	let dos_ = [];
+    let NSdos_=[];
+	let gap_ = [];
     let entropy_ = [];
     let NSentropy_ = [];
     let temperature_ = [];
@@ -99,800 +109,126 @@ Eg: <input type="text" id="EgField">
     let DF_ = [];
     let Dt_ = [];
     let lambda_ = [];
-    let T1_ = 0;
-    //let T2_ = 30;
-    const NT_ = 301;
-    let nTc_ = 80;//0.8*(NT_-1);
-    let dT_ = (Tc_-T1_)/nTc_;
-    let T2_ = T1_+(NT_-1)*dT_;
+    
+    var statusDisplay;
+    var worker;
+    var searchButton;
+
+
+
+    window.onload = function() {
+        statusDisplay = document.getElementById("status");
+        searchButton = document.getElementById("submitButton");
+    };
+
 
     function initArrays(){
-        energy = new Array(NE);
-        for(let i = 0; i<NE; i++){
-            energy[i] = (E1*100+i*dE*100)/100;
+        energy_ = new Array(NE_);
+        for(let i = 0; i<NE_; i++){
+            energy_[i] = (E1_*100+i*dE_*100)/100;
         }    
-        dos = new Array(NE).fill(0);
-        NSdos = new Array(NE).fill(0);
+        dos_ = new Array(NE_).fill(0);
+        NSdos_ = new Array(NE_).fill(0);
 
         temperature_ = new Array(NT_);
         for(let i = 0; i<NT_; i++){
             temperature_[i] = T1_+i*dT_;
         }
         gap_ = new Array(NT_).fill(0);
-        entropy = new Array(NT_).fill(0);
-        NSentropy = new Array(NT_).fill(0);
+        entropy_ = new Array(NT_).fill(0);
+        NSentropy_ = new Array(NT_).fill(0);
         //gamma_ = new Array(NT_).fill(0);
         //NSgamma_ = new Array(NT_).fill(0);
         DF_ = new Array(NT_).fill(0);
         Dt_ = new Array(NT_).fill(0);
         lambda_ = new Array(NT_).fill(0);
     }
-	
-    function setAlpha(){
+
+
+    function runCalculations() {
+        // Disable the button, so the user can't start more than one search
+        // at the same time.
+        submitButton.disabled = true;
+
+        // Create the worker.
+        worker = new Worker("js/cos2thetaWorker.js");
+
+        // Hook up to the onMessage event, so you can receive messages
+        // from the worker.
+        worker.onmessage = receivedWorkerMessage;
+
+        // Get the number range, and send it to the web worker.
         alpha_ = document.getElementById("alphaField").value;
-        Eg_ = document.getElementById("EgField").value*alphaBCS_*kb_*Tc_;
-        thc_ = document.getElementById("thcField").value*Math.PI/180.0;
-        runCalculations();
+        Eg_ = document.getElementById("EgField").value;//*alphaBCS_*kb_*Tc_;
+        thc_ = document.getElementById("thcField").value;//*Math.PI/180.0;
+
+        worker.postMessage(
+        {   Tc: Tc_,
+            alpha: alpha_,
+            Eg: Eg_,
+            thc: thc_,
+            }
+        );
+
+        // Let the user know that things are on their way.
+        //statusDisplay.innerHTML = "A web worker is on the job (alpha "+
+        //alpha_ + " thc " + thc_ + ") ...";
     }
 
-	function computeDos(){
-	
-		let th1 = 0;
-        let th2 = Math.PI/4.0;
-        const Nth = 200;
-        let dth = (th2-th1)/(Nth-1);
-        let th = 0;
-		var E = E1;
-		var N = 2.0;
-        var ns = 1.0;
-        var nn = 0;
-		var delta = alpha_*kb_*Tc_;
-        var deltatheta = 0;
-        var N2 = 0;
-       
-        var pg = 0;
-		var x;
-		for(let i = 0; i<NE; i++){
-			E = energy[i];
-            N = 0;
-            N2 = 0;
-            th = th1;
-            //pg = Eg_*(1.0-th/thc_);
-            pg = 0;
-                if(th<thc_)
-            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-            deltatheta = delta*Math.cos(2.0*th);
-            x = Math.pow(E,2)-Math.pow(deltatheta,2);
-            nn = 1.0;
-            if(Math.abs(E)<pg)
-                    nn = 0;
-                N2+=0.5*nn;    
+    function receivedWorkerMessage(event) {
+        var message = event.data;  
 
-            if(x>0) {
-                ns = 1.0;
-                if(Math.sqrt(x)<pg){   
-                    ns = 0;
-                }
-                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);    
-            }
-            if(E==0 && x==0){
-                if(E>=pg)
-                N+= 0.5;
-            }
-            th = th1+(Nth-1)*dth;
-            //pg = Eg_*(1.0-th/thc_);
-            pg = 0;
-                if(th<thc_)
-            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-            deltatheta = delta*Math.cos(2.0*th);
-            x = Math.pow(E,2)-Math.pow(deltatheta,2);
-            nn = 1.0;
-            if(Math.abs(E)<pg)
-                    nn = 0;
-                N2+=0.5*nn;   
+        if (message.messageType == "Progress") {
+            // Report the current progress.
+            //statusDisplay.textContent = message.data + "% done …";
+            setProgress(message.data);
+        }
 
-            if(x>0) {
-                ns = 1.0;
-                if(Math.sqrt(x)<pg){   
-                    ns = 0;
-                }
-                N += 0.5*ns*Math.abs(E)/Math.sqrt(x);   
-            }
-            if(E==0 && x==0){
-                if(E>=pg)
-                N+= 0.5;
-            }
-            
+        else if (message.messageType == "Dos") {
+            energy_ = message.E;
+            dos_ = message.N;
+            NSdos_ = message.Nn;
+            setEChart(dos_,'Density of States');
+            setEChart2(NSdos_,"Normal State");
+        }
+        else if (message.messageType == "Entropy") {
+            entropy_ = message.S;
+            NSentropy_ = message.Sn;
+        }
+        else if (message.messageType == "Delta") {
+            gap_ = message.D;
+        }
 
-			for(let j = 1; j<Nth-1; j++){
-                th = th1+j*dth;
-                //pg = Eg_*(1.0-th/thc_);
-                pg = 0;
-                if(th<thc_)
-                pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-                deltatheta = delta*Math.cos(2.0*th);
-                x = Math.pow(E,2)-Math.pow(deltatheta,2);
-                nn = 1.0;
-                if(Math.abs(E)<pg)
-                        nn = 0;
-                    N2+=nn;   
+        else if (message.messageType == "Gamma") {
+            gamma_ = message.g;
+            NSgamma_ = message.gn;
+            setTChart(gamma_,'Gamma','mJ/mol/K\u00B2');
+            setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
+        }
 
-                if(x>0){
-                    ns = 1.0;
-                    if(Math.sqrt(x)<pg){   
-                        ns = 0;
-                    }   
-                    N += ns*Math.abs(E)/Math.sqrt(x);
-                    //N = fermi(E,0,0);
-                }
-                if(E==0 && x==0){
-                    if(E>=pg)
-                N+= 1.0;
-            }
-            }
-			dos[i]=(N*dth*4.0/Math.PI);
-            NSdos[i] =(N2*dth*4.0/Math.PI);
-		}
-		
-	}
-	
-	function computeDosAGM(){
-		var E = E1;
-		var N = 2.0;
-		var delta = alpha_*kb_*Tc_;
         
-		var x,a,b;
-		for(let i = 0; i<NE; i++){
-			E = energy[i];
-            N = 0;
-            
-            //x = Math.pow(E,2)-Math.pow(delta,2)-Math.pow(Eg_,2);
-			a = Resqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
-			b = Imsqrt(1.0-(Math.pow(delta,2)+Math.pow(Eg_,2))/Math.pow(E,2),0);
-			x = Zagm(1.0,a,b);
-			console.log(x);
-			if(Math.abs(x[0])>0 || Math.abs(x[1])>0) N = x[0]/(Math.pow(x[0],2)+Math.pow(x[1],2));
-			
-			dos[i]=N;
-		}
-		console.log(String(Resqrt(1.0,0)));
-		console.log(Imsqrt(1.0,0));
-	}
+        else if (message.messageType == "DF") {
+            DF_ = message.F;
+        }
+
+        else if (message.messageType == "Dt") {
+            Dt_ = message.Dt;
+        }
+
+        else if (message.messageType == "Lambda") {
+            lambda_ = message.L;
+            submitButton.disabled = false;
+        }
+
+        
+    }
+
+
+
+    
 	
-	function agm(a0, g0) {
-    var an = (a0 + g0) / 2.0,
-        gn = Math.sqrt(a0 * g0);
-    while (Math.abs(an - gn) > 1E-8) {
-        an = (an + gn) / 2.0, gn = Math.sqrt(an * gn)
-    }
-    return an;
-}
-
-
-function Zagm(a0, Rg0, Ig0) {
-    var Ran = (a0 + Rg0) / 2.0,
-		Ian = (Ig0)/2.0,
-        Rgn = Resqrt(a0 * Rg0, a0 * Ig0),
-		Ign = Imsqrt(a0 * Rg0, a0 * Ig0);
-    while (Math.abs(Ran - Rgn) > 1E-8) {
-        Ran = (Ran + Rgn) / 2.0, Ian = (Ian +Ign)/2.0, Rgn = Resqrt(Ran * Rgn - Ian * Ign, Ran*Ign+Rgn*Ian), Ign = Resqrt(Ran * Rgn - Ian * Ign, Ran*Ign+Rgn*Ian); 
-    }
-    return [Ran,Ian];
-}
- 
-function Resqrt(Re, Im){
-	var z = Math.sqrt(Math.pow(Re,2)+Math.pow(Im,2));
-	return Math.sqrt(0.5*(z+Re));
-}
-
-function Imsqrt(Re,Im){
-	var z = Math.sqrt(Math.pow(Re,2)+Math.pow(Im,2));
-	if(Im==0) return Math.sqrt(0.5*(z-Re));
-	return Im/Math.abs(Im)*Math.sqrt(0.5*(z-Re));
-}
- 
-
-    function calculateDelta(){
-        for(let i=0; i<NT_; i++){
-            gap_[i] = 1E3*delta(alpha_,Tc_,temperature_[i]);
-        }
-    } 
-     
-    function fermi(E, mu, T){
-        if(T==0){
-            if(E<mu){
-                return 1.0;
-            }
-            else if(E==mu){ 
-                return 0.5;
-            }
-            else if(E>mu){
-                return 0;
-            }
-        }
-        return 1.0/(Math.exp((E-mu)/kb_/T)+1.0);
-    }
-
-    function dfdt(t,Delta,T){
-        let x = Math.sqrt(Math.pow(t,2)+Math.pow(Delta,2));
-        let y = Math.exp(x/kb_/T);
-        return -t*y/(Math.pow(y+1,2)*x*kb_*T);
-    }
-
-    function dfdE(E,T){
-        let y = Math.exp(E/kb_/T);
-        return -y/(Math.pow(y+1,2)*kb_*T);
-    }
-
-    function calculateLvsT(){
-        let th1 = 0;
-        let th2 = Math.PI/4.0;
-        const Nth = 200;
-        let dth = (th2-th1)/(Nth-1);
-        let th = 0;
-        let d0 = 0;
-        let pg = 0;
-        for(let i = 0; i<NT_; i++){
-            d0 = delta(alpha_,Tc_,temperature_[i]);
-            for(let j = 0; j<Nth; j++){
-                th = th1+j*dth;
-                //pg = Eg_*(1.0-th/thc_);
-                pg = 0;
-                if(th<thc_)
-                    pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-               
-                lambda_[i] += calculateLambda(0.02,d0*Math.cos(2.0*th),pg, temperature_[i]);
-            }
-            lambda_[i] = lambda_[i]*dth/Math.PI*4.0;  
-            console.log(temperature_[i]);  
-        }
-    }
-
-
-    function calculateCLambda(mu, Delta, pg, T){
-        let E = 0;
-        let x = 0;
-        let sum = 0;
-        for(let i = 0; i<NE; i++){
-            E = pg+i*dE;
-            x = Math.pow(E,2)-Math.pow(Delta,2);
-            if(x>0){
-                sum+=Math.abs(E)/Math.sqrt(x)*dfdE(E,T);
-            }
-            
-        }
-        return sum*dE;
-    }
-
-    function calculateKLambda(mu, Delta, pg, T){
-
-        let ek = 0;
-        let k1 = 0;
-        let k2 = Math.PI;
-        let Nk = 100;
-        let dk = (k2-k1)/(Nk-1);
-        let kx = 0;
-        let ky = 0;
-        let Ek = 0;
-        let vk = 0;
-        let sum = 0;
-        let x = 0;
-        let y = 0;
-        let z= 0;
-
-        for(let i = 0; i<Nk; i++){
-            kx = k1+i*dk;
-            for(let j = 0; j<Nk; j++){
-                ky = k1+j*dk;
-                ek = 0.05*(kx*kx+ky*ky)-0.2;
-                vk = kx;
-                if(Math.abs(ek)>=pg){
-                Ek = Math.sqrt(Math.pow(ek,2)+Math.pow(Delta,2));
-                if(Ek!=0){
-                    x= Math.pow(vk*Delta/Ek,2)*2.0*dfdE(Ek,T);
-                    y = Math.pow(vk*Delta/Ek,2)*(1.0-2.0*fermi(Ek,0,T))/Ek;
-                    if(!isNaN(x)){
-                        sum+=x;
-                    }
-                    if(!isNaN(y)){
-                        sum+=y;
-                    }
-                }
-                }
-            }
-        }
-        //console.log(sum);
-        return sum*=Math.pow(dk,2);
-    }
-
-    function calculateLambda(mu, Delta, pg, T){
-        E1 = -0.1;
-        E2 = -E1;
-        let NEL = 2*NE;
-        dE = (E2-E1)/(NEL-1);
-        let E = 0;
-        let a = 0;
-        let b = 0;
-        let c = 0;
-        let d = 0;
-        let x = 0;
-        let sum = 0;
-
-        E = E1;
-        if(Math.abs(E)>=pg){
-            if(E==0){
-                sum+=-0.5*2.0*mu*(Math.exp(Delta/kb_/T)/Math.pow(Math.exp(Delta/kb_/T)+1.0,2)/kb_/T)+0.5*mu/Delta*(1.0-2.0*fermi(Delta,0,T));
-            }else{
-            x = Math.sqrt(Math.pow(E,2)+Math.pow(Delta,2));
-            a = Math.pow(Delta,2)/x;
-            b = mu*Math.pow(Delta,2)/E/x;
-            c = 2.0*dfdt(E,Delta,T);
-            if(isNaN(c)) c=0;
-            d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
-            sum+=0.5*(a+b)*(c+d);
-            }
-        }
-
-            E = E2;
-            if(Math.abs(E)>=pg){
-            if(E==0){
-                sum+=-0.5*2.0*mu*(Math.exp(Delta/kb_/T)/Math.pow(Math.exp(Delta/kb_/T)+1.0,2)/kb_/T)+0.5*mu/Delta*(1.0-2.0*fermi(Delta,0,T));
-            }else{
-            x = Math.sqrt(Math.pow(E,2)+Math.pow(Delta,2));
-            a = Math.pow(Delta,2)/x;
-            b = mu*Math.pow(Delta,2)/E/x;
-            c = 2.0*dfdt(E,Delta,T);
-            if(isNaN(c)) c=0;
-            d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
-            sum+=0.5*(a+b)*(c+d);
-            }    
-            }
-
-
-        for(let i = 1; i<NEL-1; i++){
-            E = E1+i*dE;
-            if(Math.abs(E)>=pg){
-            if(E==0){
-                sum+=-2.0*mu*(Math.exp(Delta/kb_/T)/Math.pow(Math.exp(Delta/kb_/T)+1.0,2)/kb_/T)+mu/Delta*(1.0-2.0*fermi(Delta,0,T));
-            }else{
-            x = Math.sqrt(Math.pow(E,2)+Math.pow(Delta,2));
-            a = Math.pow(Delta,2)/x;
-            b = mu*Math.pow(Delta,2)/E/x;
-            c = 2.0*dfdt(E,Delta,T);
-            if(isNaN(c)) c=0;
-            d = E*(1.0-2.0*fermi(x,0,T))/Math.pow(x,2);
-            if(isNaN(d)) console.log(d);
-            sum+=(a+b)*(c+d);
-            }
-            }
-        }
-        return sum*=dE;
-    }
-
-
-    function calculateGamma(){
-        for(let i = 0; i<NT_-1; i++){
-            gamma_[i]=(entropy_[i+1]-entropy_[i])/dT_;
-            NSgamma_[i]=(NSentropy_[i+1]-NSentropy_[i])/dT_;
-        }
-    }
-
-    function calculateDt(){
-        let x = 0;
-        for(let i = 0; i<NT_; i++){
-            x = 0;
-            if(temperature_[i]<Tc_)
-            x = Math.sqrt(DF_[i]/DF_[0])-(1.0-Math.pow(temperature_[i]/Tc_,2));
-            Dt_[i] = x;
-        }
-    }
-
-    function calculateDF(){
-        let sum = 0;
-        for(let i = nTc_-1; i>=0; i--){
-            sum+=0.5*(entropy_[i]-NSentropy_[i]+entropy_[i+1]-NSentropy_[i+1]);
-            DF_[i]=-sum*dT_;
-        }
-    }
-
-    function calculateEntropy(alpha,Tc){
-        for(let i = 0; i<NT_; i++){
-            if(temperature_[i]==0){
-                entropy_[i] = 0;
-                NSentropy_[i] = 0;
-            }else{
-                entropy_[i] = S(alpha,Tc,temperature_[i]);
-                NSentropy_[i] = Sn(temperature_[i]);
-            }    
-            //setProgress(i/(NT_-1)*100);
-        }
-    }
-
-
-    function S(alpha, Tc, T){
-        E1 = 0;
-        E2 = 0.0015*T;
-        dE = (E2-E1)/(NE-1);
-        let E = 0;
-        let th1 = 0;
-        let th2 = Math.PI/4.0;
-        const Nth = 200;
-        let dth = (th2-th1)/(Nth-1);
-        let th = 0;
-        let t = 0;
-        let f = 0;
-        let fw = 0;
-        let sum = 0;
-        let del = 0;
-        let d0 = delta(alpha,Tc,T);
-        let pg = 0;
-        let ns = 0;
-        let x = 0;
-		
-		th = th1;
-        pg = 0;
-        if(th<thc_)
-            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-		del = d0*Math.cos(2.0*th);
-		E1 = pg;
-		E2 = 0.0015*T;
-		if(E1>E2){
-			//console.log(pg+" "+E2);
-			E2=2.0*E1;
-		}
-		dE = (E2-E1)/(NE-1);
-		
-		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-		
-		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-
-		for(let i = 1; i<NE-1; i++){                
-			t = E1+i*dE;               
-			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += fw*dE;
-			}
-			
-		}
-		
-		
-		th = th2;
-		pg = 0;
-        if(th<thc_)
-            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-		del = d0*Math.cos(2.0*th);
-		E1 = pg;
-		E2 = 0.0015*T;
-		if(E1>E2){
-			//console.log(pg+" "+E2);
-			E2=2.0*E1;
-		}
-		dE = (E2-E1)/(NE-1);
-		
-		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-		
-		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-		f = fermi(x,0,T);
-		fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-		if(!isNaN(fw)){
-			sum += 0.5*fw*dE;
-		}
-
-		for(let i = 1; i<NE-1; i++){                
-			t = E1+i*dE;               
-			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += fw*dE;
-			}
-			
-		}
-		
-
-        for(let j = 1; j<Nth-1; j++){
-            th = th1+j*dth;
-            pg = 0;
-            if(th<thc_)
-                pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-            del = d0*Math.cos(2.0*th);
-            
-            E1 = pg;
-            E2 = 0.0015*T;
-            if(E1>E2){
-                //console.log(pg+" "+E2);
-                E2=2.0*E1;
-            }
-            dE = (E2-E1)/(NE-1);
-			
-			x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += 0.5*fw*dE;
-			}
-			
-			x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-			f = fermi(x,0,T);
-			fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-			if(!isNaN(fw)){
-				sum += 0.5*fw*dE;
-			}
-
-            for(let i = 1; i<NE-1; i++){                
-                t = E1+i*dE;               
-                x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-                f = fermi(x,0,T);
-                fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-                if(!isNaN(fw)){
-                    sum += fw*dE;
-                }
-                
-            }
-
-        }    
-            
-         return sum*=(-dth*4.0/Math.PI*2.0*1E3*8.3145);
-
-    }
-
-
-
-    function S_old2(alpha, Tc, T){
-        E1 = 0;
-        E2 = 0.0015*T;
-        dE = (E2-E1)/(NE-1);
-        let E = 0;
-        let th1 = 0;
-        let th2 = Math.PI/4.0;
-        const Nth = 200;
-        let dth = (th2-th1)/(Nth-1);
-        let th = 0;
-        let t = 0;
-        let f = 0;
-        let fw = 0;
-        let sum = 0;
-        let del = 0;
-        let d0 = delta(alpha,Tc,T);
-        let pg = 0;
-        let ns = 0;
-        let x = 0;
-
-        for(let j = 0; j<Nth; j++){
-            th = th1+j*dth;
-            //pg = Eg_*(1.0-th/thc_);
-            pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
-            del = d0*Math.cos(2.0*th);
-            if(pg<0){
-                pg = 0;
-            }
-            E1 = pg;
-            E2 = 0.0015*T;
-            if(E1>E2){
-                //console.log(pg+" "+E2);
-                E2=2.0*E1;
-            }
-            dE = (E2-E1)/(NE-1);
-
-            for(let i = 0; i<NE; i++){
-                
-                t = E1+i*dE;
-                
-                x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
-                ns = 1.0;
-                /*
-                if(Math.abs(t)<=pg){   
-                    ns = pg;
-                }
-                */
-                f = fermi(x,0,T);
-                fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-                if(!isNaN(fw)){
-                    sum += ns*fw*dE;
-                }
-                
-            }
-
-        }    
-            
-         return sum*=(-dth*4.0/Math.PI*2.0*1E3*8.3145);
-
-    }
-
-
-    function S_old(alpha, Tc, T){
-        E1 = -0.0015*T;
-        E2 = -E1;
-        dE = (E2-E1)/(NE-1);
-        let E = 0;
-        let th1 = 0;
-        let th2 = Math.PI/4.0;
-        const Nth = 200;
-        let dth = (th2-th1)/(Nth-1);
-        let th = 0;
-        
-        let f = 0;
-        let fw = 0;
-        let sum = 0;
-        let del = 0;
-        let d0 = delta(alpha,Tc,T);
-        let pg = 0;
-        let ns = 0;
-        
-            pg = Eg_*(1.0-th1/th2);
-            del = d0*Math.cos(2.0*th1);    
-            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E1)<pg){   
-                    ns = pg;
-                }
-            f = fermi(E,0,T);
-            fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-            //if(f>0)
-            if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
     
-            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E2)<pg){   
-                    ns = pg;
-                }
-            f = fermi(E,0,T);
-            //if(f>0)
-            fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-            if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
-
-            for(let i = 1; i<NE-1; i++){  
-                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2));
-                ns = 1.0;
-                if(Math.abs(E1+i*dE)<pg){   
-                    ns = pg;
-                }
-                f = fermi(E,0,T);
-                fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-                //if(f>0)
-                if(!isNaN(fw))
-                sum+=0.5*ns*fw;
-            }
-
-            pg = Eg_*(1.0-th2/th2);
-            del = d0*Math.cos(2.0*th2);    
-            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E1)<pg){   
-                    ns = pg;
-                }
-            f = fermi(E,0,T);
-            fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-            //if(f>0)
-            if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
     
-            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E2)<pg){   
-                    ns = pg;
-                }
-            f = fermi(E,0,T);
-            fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-            //if(f>0)
-            if(!isNaN(fw))
-            sum += 0.5*0.5*ns*fw;
-
-            for(let i = 1; i<NE-1; i++){  
-                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2));
-                ns = 1.0;
-                if(Math.abs(E1+i*dE)<pg){   
-                    ns = pg;
-                }
-                f = fermi(E,0,T);
-                fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-                //if(f>0)
-                if(!isNaN(fw))
-                sum+=0.5*ns*fw;
-            }
-
-        for(let j = 1; j<Nth-1; j++){
-            th = th1+j*dth;
-            pg = Eg_*(1.0-th/th2);
-            del = d0*Math.cos(2.0*th);    
-            E = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E1)<pg){   
-                    ns = pg;
-                }
-            f = fermi(E,0,T);
-            fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-            //if(f>0)
-            if(!isNaN(fw))
-            sum += 0.5*ns*fw;
-    
-            E = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
-            ns = 1.0;
-                if(Math.abs(E2)<pg){   
-                    ns = pg;
-                }
-            f = fermi(E,0,T);
-            //if(f>0)
-            fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-            if(!isNaN(fw))
-            sum += 0.5*ns*fw;
-
-            for(let i = 1; i<NE-1; i++){  
-                E = Math.sqrt(Math.pow(E1+i*dE,2)+Math.pow(del,2));
-                ns = 1.0;
-                if(Math.abs(E1+i*dE)<pg){   
-                    ns = pg;
-                }
-                f = fermi(E,0,T);
-                fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-                if(!isNaN(fw))
-                sum+=ns*fw;
-                //if(isNaN(sum)) console.log(f+' '+T);
-            }
-        }
-         return sum*=(-dE*dth*4.0/Math.PI*2.0*1E3*8.3145);
-
-    }
-
-
-    function Sn(T){
-        return S(0,Tc_,T);
-        /*
-        E1 = -0.0015*T;
-        E2 = -E1;
-        dE = (E2-E1)/(NE-1);
-        let sum = 0;
-        let E = E1;
-        let f = fermi(E,0,T);
-        let fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-        //if(f>0)
-        if(!isNaN(fw))
-        sum = 0.5*fw;
-         E = E2;
-         f = fermi(E,0,T);
-         fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-         //if(f>0);
-         if(!isNaN(fw))
-         sum += 0.5*fw;
-         for(let i = 1; i<NE-1; i++){
-            E = E1+i*dE;
-            f = fermi(E,0,T);
-            fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
-            //if(f>0)
-            if(!isNaN(fw))
-            sum+=fw;
-         }
-         return sum*=(-dE*2.0*1E3*8.3145);
-         */
-    }
-
-
-    function delta(alpha,Tc,T){
-        let a = 7.0/5.0;
-        let DCoverC = 0.955;
-        let y = a*DCoverC*(Tc/T-1.0);
-        if(y<0) return 0;
-        return alpha*kb_*Tc*Math.tanh(Math.PI/alphaBCS_*Math.sqrt(y));
-    }
 
 
     function download_csv() {
@@ -902,8 +238,8 @@ function Imsqrt(Re,Im){
                 //csv += "\n";
         //});
 		var i = 0;
-		for(i = 0; i<NE; i++){
-			csv+=energy[i]+','+dos[i]+','+NSdos[i]+'\n';
+		for(i = 0; i<NE_; i++){
+			csv+=energy_[i]+','+dos_[i]+','+NSdos_[i]+'\n';
 		}
 		
      
@@ -946,7 +282,7 @@ chart = new Chart(ctx, {
 
     // The data for our dataset
     data: {
-        labels: energy,
+        labels: energy_,
         datasets: [{
             label: 'Density of States',
 			lineTension:0,
@@ -1156,43 +492,21 @@ function setEChart2(data,title){
 }
 
 
-function runCalculations(){
-computeDos();
-setEChart(dos,'Density of States');
-setEChart2(NSdos,"Normal State");
-calculateDelta();
-calculateEntropy(alpha_,Tc_);
-calculateGamma();
-calculateDF();
-calculateDt();
-calculateLvsT();
-setTChart(gamma_,'Gamma','mJ/mol/K\u00B2');
-setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
-}
+
 
 document.getElementById("alphaField").value = alpha_;
 document.getElementById("EgField").value = 2.0;
 document.getElementById("thcField").value = 45;
 initArrays();
-computeDos();
-makeChart(dos);
-setEChart2(NSdos,'Normal State');
+makeChart(dos_);
+setEChart2(NSdos_,'Normal State');
 chart.canvas.parentNode.style.height = '50%';
 chart.canvas.parentNode.style.width = '40%';
-calculateDelta();
-calculateEntropy(alpha_,Tc_);
-calculateGamma();
-calculateDF();
-calculateDt();
-calculateLvsT();
+
 makeTChart(gamma_);
 setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
 Tchart_.canvas.parentNode.style.height = '50%';
 Tchart_.canvas.parentNode.style.width = '40%';
-//chart.data.labels = energy;
-//chart.data.datasets[0].data=dos;
-				// re-render the chart
-//				chart.update();
 
 function setProgress(amount){
 	var elem = document.getElementById("myBar");
