@@ -40,7 +40,8 @@ let T2_ = 1200*t0_;
 const NT_ = 301;
 let dT_ = (T2_-T1_)/(NT_-1);
 
-
+let kFx_ = [];
+let kFy_ = [];
 
 
 let nTc_ = 80;//0.8*(NT_-1);
@@ -78,9 +79,18 @@ onmessage = function(event) {
     this.console.log(calculateDoping());
     */
 
+   postMessage(
+    {messageType: "Progress", data: 0}
+    );
+
     let p = calculateDoping();
     postMessage(
         {messageType: "Parameters", doping: p, Eg: Eg_}
+      );
+
+    calculateFS();
+    postMessage(
+        {messageType: "FS", kFx: kFx_, kFy: kFy_}
       );
 
     initArrays();
@@ -124,6 +134,7 @@ onmessage = function(event) {
     postMessage(
         {messageType: "Lambda", L: lambda_}
       );
+      
 
       
     postMessage(
@@ -908,5 +919,59 @@ function calculateDoping() {
 	}
 	
 	return p;
+
+}
+
+
+function calculateFS(){
+
+    kFx_ = [];
+    kFy_ = [];
+
+	let bias = 0.00;
+	let kx,ky;
+	let k1 = 0;
+	let k2 = Math.PI;
+	let tol = 0.001;
+	let N = 600;
+	let dk = (k2-k1)/(N-1);
+	let Ep,Em;
+	let gtVar,gtWp,gtWm;
+	
+	
+		
+		
+    for(let i = 0; i<N; i++){
+        kx = k1+i*dk;
+        for(let j = 0; j<N; j++){
+            ky = k1+j*dk;
+
+            if (Eg_ == 0) {
+                Ep = xi(kx, ky, mu_*t0_, x_);
+                Em = -1;
+            }
+            else {
+                //getBandValues(kx, ky, x_, mup_, Eg_, Ep, Em, gtWp, gtWm);
+                
+                xiVar = xi(kx, ky, mu_*t0_, x_);
+                xi0Var = xi0(kx, ky, x_);
+                pg = pseudogap(kx, ky, Eg_*t0_);
+                y = Math.sqrt(Math.pow(0.5*(xiVar + xi0Var), 2) + Math.pow(pg, 2));
+                Ep = 0.5*(xiVar - xi0Var) + y;
+                Em = 0.5*(xiVar - xi0Var) - y;
+                Wp = 0.5*(1.0 + (xiVar + xi0Var) / 2.0 / y);
+                Wm = 0.5*(1.0 - (xiVar + xi0Var) / 2.0 / y);
+            }
+            
+            if(Math.abs(Ep-bias)<tol || Math.abs(Em-bias)<tol){
+                kFx_.push(kx);
+                kFy_.push(ky);
+            }	
+            
+        }
+			
+		
+
+	}
 
 }
