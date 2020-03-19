@@ -4,4 +4,4 @@
 <br>
 <a href="dwaveCosEg.html">cos(2&theta;) Pseudogap</a>
 <br>
-<a href="YRZ.html">YRZ Model</a>
+<a href="YRZ3.html">YRZ Model</a>
