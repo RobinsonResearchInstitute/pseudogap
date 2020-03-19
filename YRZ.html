@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+        
+    <head>
+    <meta charset="UTF-8" />
+            <link rel="stylesheet" href="dos.css">
+            <script src = "js/Chart.js"></script>
+			<title>YRZ Model</title>
+    </head>
+<body bgcolor='#000000'>
+
+<h1>Yang-Rice-Zhang Model</h1>
+	<div class="topright" style="position: absolute; right:5%; top:30%; height:40vh; width:80vw">     
+<canvas id="myChart"></canvas>
+</div>
+
+<div style="position: absolute; left:5%; top:30%; height:40vh; width:80vw">     
+    <canvas id="myTChart"></canvas>
+    </div>
+
+<div id="inputDiv" class='margin-1'>  
+
+
+ 
+Alpha:
+    <input type="text" id="alphaField">
+    <button id='submitButton' onclick="runCalculations()">Submit</button>
+    <button onclick="cancelCalculations()">Cancel</button>
+
+<button onclick="setTChart(gamma_,'Gamma','mJ/mol/K&#xb2');setTChart2(NSgamma_,'Normal State','mJ/mol/K&#xb2')">Gamma</button>
+<button onclick="setTChart(entropy_,'Entropy','mJ/mol/K');setTChart2(NSentropy_,'Normal State','mJ/mol/K')">Entropy</button> 
+<button onclick="setTChart(DF_,'DeltaF','mJ/mol');setTChart2([],'','mJ/mol/K&#xb2')"">DeltaF</button>
+<button onclick="setTChart(gap_,'Gap','meV');setTChart2([],'','mJ/mol/K&#xb2')">Gap</button>
+<button onclick="setTChart(Dt_,'D(t)','');setTChart2([],'','mJ/mol/K&#xb2')">D(t)</button>
+<button onclick="setTChart(lambda_,'L(t)','');setTChart2([],'','mJ/mol/K&#xb2')">lambda</button>
+
+<button onclick="download_Tdata()">Download T data</button> 
+<button onclick="download_csv()">Download DOS</button>
+
+<!-- Trigger/Open The Modal -->
+<button id="aboutBtn">About</button>
+<br>
+<br>
+x: <input type="text" id="xField">
+&mu;: <input type="text" id="muField">
+p: <input type="text" id="pField" readonly>
+Eg: <input type="text" id="EgField" readonly>
+&Delta;: <input type="text" id="deltaField" readonly>
+<br>
+<br>
+<div id="myProgress">
+    <div id="myBar">0%</div>
+  </div>
+
+</div>
+
+
+
+<div id="status"></div>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <p>Made by James Storey, Robinson Research Institute, 2020</p>
+    </div>
+  
+  </div>
+
+
+
+<!--Required for downloading csv-->
+    <div id="container" style="display:none;"></div>
+
+<div id="logo">
+    <a href="https://www.wgtn.ac.nz/robinson">
+    <img src="RRILogoSmall.png" alt="Logo">
+    </a>
+    </div>
+
+    <script>
+    const kb_ = 8.62e-5;    
+    let t0_ = 1.0;
+    let Tc_ = 80;
+    let alpha_ = 2.14;
+    let Eg_ = 2;
+    let Delta0_ = 0;
+    let x_ = 0.2;
+    let mu_ = -0.46;
+    let thc_ = 45;
+    let p_ = 0;
+    let E1_ = -1.5*t0_;
+    let E2_ = 2.5*t0_;
+    const NE_ = 2501;
+    let dE_ = (E2_-E1_)/(NE_-1);
+
+    let T1_ = 2*t0_;
+    let T2_ = 1200*t0_;
+    const NT_ = 301;
+    let dT_ = (T2_-T1_)/(NT_-1);
+    let nTc_ = 80;//0.8*(NT_-1);
+    //let dT_ = (Tc_-T1_)/nTc_;
+    //let T2_ = T1_+(NT_-1)*dT_;
+
+
+	let chart;
+    let Tchart_;
+
+	let energy = [];
+	let dos_ = [];
+    let NSdos_=[];
+	let gap_ = [];
+    let entropy_ = [];
+    let NSentropy_ = [];
+    let temperature_ = [];
+    let gamma_ = [];
+    let NSgamma_ = [];
+    let DF_ = [];
+    let Dt_ = [];
+    let lambda_ = [];
+    
+    var statusDisplay;
+    var worker;
+    var searchButton;
+
+
+
+    window.onload = function() {
+        statusDisplay = document.getElementById("status");
+        searchButton = document.getElementById("submitButton");
+    };
+
+
+    function initArrays(){
+        energy_ = new Array(NE_);
+        for(let i = 0; i<NE_; i++){
+            energy_[i] = (E1_*100+i*dE_*100)/100;
+        }    
+        dos_ = new Array(NE_).fill(0);
+        NSdos_ = new Array(NE_).fill(0);
+
+        temperature_ = new Array(NT_);
+        for(let i = 0; i<NT_; i++){
+            temperature_[i] = T1_+i*dT_;
+        }
+        gap_ = new Array(NT_).fill(0);
+        entropy_ = new Array(NT_).fill(0);
+        NSentropy_ = new Array(NT_).fill(0);
+        //gamma_ = new Array(NT_).fill(0);
+        //NSgamma_ = new Array(NT_).fill(0);
+        DF_ = new Array(NT_).fill(0);
+        Dt_ = new Array(NT_).fill(0);
+        lambda_ = new Array(NT_).fill(0);
+    }
+
+
+    function runCalculations() {
+        // Disable the button, so the user can't start more than one search
+        // at the same time.
+        submitButton.disabled = true;
+
+        // Create the worker.
+        worker = new Worker("js/yrzWorker.js");
+
+        // Hook up to the onMessage event, so you can receive messages
+        // from the worker.
+        worker.onmessage = receivedWorkerMessage;
+
+        // Get the number range, and send it to the web worker.
+        alpha_ = document.getElementById("alphaField").value;
+        Eg_ = document.getElementById("EgField").value;//*alphaBCS_*kb_*Tc_;
+        //thc_ = document.getElementById("thcField").value;//*Math.PI/180.0;
+        x_ = document.getElementById("xField").value;
+        mu_ = document.getElementById("muField").value;
+        
+        Delta0_ = 0.14*(1.0 - 82.6*Math.pow(x_ - 0.16, 2));
+        if(Delta0_<0) Delta0_ = 0;
+        Tc_ = Delta0_/alpha_/kb_;
+        nTc_ = 100;
+        dT_ = (Tc_-T1_)/nTc_;
+        T2_ = T1_+(NT_-1)*dT_;
+        document.getElementById("deltaField").value = Delta0_.toFixed(3);
+
+        initArrays(); 
+        makeTChart(gamma_);
+        setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')       
+
+        worker.postMessage(
+        {   Tc: Tc_,
+            alpha: alpha_,
+            Eg: Eg_,
+            //thc: thc_,
+            x: x_,
+            mu: mu_
+            }
+        );
+
+        // Let the user know that things are on their way.
+        //statusDisplay.innerHTML = "A web worker is on the job (alpha "+
+        //alpha_ + " thc " + thc_ + ") ...";
+    }
+
+    function receivedWorkerMessage(event) {
+        var message = event.data;  
+
+        if (message.messageType == "Progress") {
+            // Report the current progress.
+            //statusDisplay.textContent = message.data + "% done …";
+            setProgress(message.data);
+        }
+
+        else if (message.messageType == "Parameters") {
+            p_ = message.doping;
+            Eg_ = message.Eg
+            document.getElementById("pField").value = p_.toFixed(3);
+            document.getElementById("EgField").value = Eg_.toFixed(3);
+        }
+
+        else if (message.messageType == "Dos") {
+            energy_ = message.E;
+            dos_ = message.N;
+            NSdos_ = message.Nn;
+            setEChart(dos_,'Density of States');
+            setEChart2(NSdos_,"Normal State");
+        }
+        else if (message.messageType == "Entropy") {
+            entropy_ = message.S;
+            NSentropy_ = message.Sn;
+        }
+        else if (message.messageType == "Delta") {
+            gap_ = message.D;
+        }
+
+        else if (message.messageType == "Gamma") {
+            gamma_ = message.g;
+            NSgamma_ = message.gn;
+            setTChart(gamma_,'Gamma','mJ/mol/K\u00B2');
+            setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
+        }
+
+        
+        else if (message.messageType == "DF") {
+            DF_ = message.F;
+        }
+
+        else if (message.messageType == "Dt") {
+            Dt_ = message.Dt;
+        }
+
+        else if (message.messageType == "Lambda") {
+            lambda_ = message.L;
+            
+        }
+        else if (message.messageType == "Done"){
+            submitButton.disabled = false;
+        }
+
+        
+    }
+
+
+
+    function cancelCalculations() {
+        worker.terminate();
+        //statusDisplay.textContent = "";
+        setProgress(0);
+        submitButton.disabled = false;
+    }
+	
+    
+    
+
+
+    function download_csv() {
+        var csv = 'E,SCDos,NSDos\n';
+        //data.forEach(function(row) {
+                //csv += row.join(',');
+                //csv += "\n";
+        //});
+		var i = 0;
+		for(i = 0; i<NE_; i++){
+			csv+=energy_[i]+','+dos_[i]+','+NSdos_[i]+'\n';
+		}
+		
+     
+        console.log(csv);
+        var hiddenElement = document.createElement('a');
+        hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+        hiddenElement.target = '_blank';
+        hiddenElement.download = 'dos.csv';
+        document.getElementById('container').appendChild(hiddenElement);
+        hiddenElement.click();
+    }
+
+    function download_Tdata() {
+        var csv = 'T,t,t2,Delta,Gamma,GammaN,S,Sn,DS,DF,Dt,lambda\n';
+        
+		for(let i = 0; i<NT_; i++){
+			csv+=temperature_[i]+','+(temperature_[i]/Tc_)+','+Math.pow(temperature_[i]/Tc_,2)+','+gap_[i]+','+gamma_[i]+','+NSgamma_[i]+','+entropy_[i]+','+NSentropy_[i]+','+(entropy_[i]-NSentropy_[i])+','+DF_[i]+','+Dt_[i]+','+lambda_[i]+'\n';
+		}
+		
+     
+        console.log(csv);
+        var hiddenElement = document.createElement('a');
+        hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csv);
+        hiddenElement.target = '_blank';
+        hiddenElement.download = 'data.csv';
+        document.getElementById('container').appendChild(hiddenElement);
+        hiddenElement.click();
+    }
+	
+	
+     
+    
+
+
+function makeChart(data){
+var ctx = document.getElementById('myChart').getContext('2d');
+chart = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'line',
+
+    // The data for our dataset
+    data: {
+        labels: energy_,
+        datasets: [{
+            label: 'Density of States',
+			lineTension:0,
+            //backgroundColor: 'rgb(255, 99, 132)',
+            borderColor: 'rgb(0, 254, 252)',
+            data: data,
+        }, 
+        {
+            label: 'Normal State',
+			lineTension:0,
+            //backgroundColor: 'rgb(255, 99, 132)',
+            //borderColor: 'rgb(238, 244, 255)',
+            borderColor: 'rgb(255, 255, 102)',
+            borderDash: [5,5],
+            data: data,
+        }]
+    },
+    
+
+    // Configuration options go here
+    options: {
+        maintainAspectRatio:false,
+		elements: {
+                    point:{
+                        radius: 0
+                    }
+					},
+        scales: {
+				
+              xAxes: [{
+                    gridLines: { color: "rgb(4,153,147)" },
+                        scaleLabel: {
+                                display: true,
+                                labelString: 'Energy (eV)',
+                                fontColor:'rgb(0, 254, 252)F',
+                                fontSize:14
+                            },
+                            ticks: {
+                               fontColor: "rgb(0, 254, 252)",
+                               //fontSize: 14
+							   callback: function(value, index, values) {
+							if (!(index % (312)))
+						//return '$' + value;
+						return value.toFixed(2);
+                    },
+					autoSkip: false,
+							   /*
+							   userCallback: function(item, index) {
+								  if (!(index % 10)) return item;
+							   },
+							   autoSkip: false,
+							    */
+                              }
+                        },
+                ],
+              yAxes: [{
+                      gridLines: { color: "rgb(4,153,147)" },
+                      scaleLabel: {
+                                display: true,
+                                labelString: 'states/eV/cell',
+                                fontColor:'rgb(0, 254, 252)',
+                                fontSize:14
+                            },
+                            ticks: {
+                               fontColor: "rgb(0, 254, 252)",
+                               //fontSize: 14
+							   min: 0,
+								//max: 3,
+								//stepSize: 1,
+                              }
+                        },
+              
+              ],
+              },
+              legend:{
+                labels:{
+                    fontColor:"rgb(0, 254, 252)",
+                    fontSize: 14,
+                }
+              }
+
+    }
+});
+}
+
+
+function makeTChart(data){
+var ctx = document.getElementById('myTChart').getContext('2d');
+Tchart_ = new Chart(ctx, {
+    // The type of chart we want to create
+    type: 'line',
+
+    // The data for our dataset
+    data: {
+        labels: temperature_,
+        datasets: [{
+            label: 'Gamma',
+			lineTension:0,
+            //backgroundColor: 'rgb(255, 99, 132)',
+            //borderColor: 'rgb(238, 244, 255)',
+            borderColor: 'rgb(0, 254, 252)',
+            data: data,
+        },
+        {
+            label: 'Normal State',
+			lineTension:0,
+            //backgroundColor: 'rgb(255, 99, 132)',
+            //borderColor: 'rgb(238, 244, 255)',
+            borderColor: 'rgb(255, 255, 102)',
+            borderDash: [5,5],
+            data: data,
+        }]
+    },
+    
+
+    // Configuration options go here
+    options: {
+        maintainAspectRatio:false,
+		elements: {
+                    point:{
+                        radius: 0
+                    }
+					},
+        scales: {
+				
+              xAxes: [{
+                    //gridLines: { color: "rgb(184,204,255)" },
+                    gridLines: { color: "rgb(4,153,147)" },
+                        scaleLabel: {
+                                display: true,
+                                labelString: 'Temperature (K)',
+                                //fontColor:'rgb(238, 244, 255)',
+                                fontColor:'rgb(0, 254, 252)',
+                                fontSize:14
+                            },
+                            ticks: {
+                               fontColor: 'rgb(0, 254, 252)',
+                               //fontSize: 14
+							   callback: function(value, index, values) {
+							        if (!(index % 50))
+							            return value.toFixed(2);
+                                },
+					            autoSkip: false,
+							   /*
+							   userCallback: function(item, index) {
+								  if (!(index % 10)) return item;
+							   },
+							   autoSkip: false,
+							    */
+                              }
+                        },
+                ],
+              yAxes: [{
+                      gridLines: { color: "rgb(4,153,147)" },
+                      scaleLabel: {
+                                display: true,
+                                labelString: 'mJ/mol/K\u00B2',
+                                fontColor:'rgb(0, 254, 252)',
+                                fontSize:14
+                            },
+                            ticks: {
+                                fontColor:'rgb(0, 254, 252)',
+                               //fontSize: 14
+							   //min: 0,
+							//	max: 1,
+							//	stepSize: 1,
+                              }
+                        },
+              
+              ],
+              },
+              legend:{
+                labels:{
+                    fontColor:'rgb(0, 254, 252)',
+                    fontSize: 14,
+                }
+              }
+
+    }
+});
+}
+
+function setTChart(data,title,units){
+    Tchart_.data.datasets[0].data = data;
+    Tchart_.data.datasets[0].label = title;
+    Tchart_.options.scales.yAxes[0].scaleLabel.labelString = units;
+    Tchart_.update();
+}
+
+function setTChart2(data,title,units){
+    Tchart_.data.datasets[1].data = data;
+    Tchart_.data.datasets[1].label = title;
+    //Tchart_.options.scales.yAxes[0].scaleLabel.labelString = units;
+    Tchart_.update();
+}
+
+function setEChart(data,title){
+    chart.data.datasets[0].data = data;
+    chart.data.datasets[0].label = title;
+    chart.update();
+}
+
+function setEChart2(data,title){
+    chart.data.datasets[1].data = data;
+    chart.data.datasets[1].label = title;
+    chart.update();
+}
+
+
+
+
+document.getElementById("alphaField").value = alpha_;
+document.getElementById("EgField").value = 0;
+document.getElementById("pField").value = "";
+document.getElementById("xField").value = x_;
+document.getElementById("muField").value = -0.46;
+initArrays();
+makeChart(dos_);
+setEChart2(NSdos_,'Normal State');
+chart.canvas.parentNode.style.height = '50%';
+chart.canvas.parentNode.style.width = '40%';
+
+makeTChart(gamma_);
+setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
+Tchart_.canvas.parentNode.style.height = '50%';
+Tchart_.canvas.parentNode.style.width = '40%';
+
+function setProgress(amount){
+	var elem = document.getElementById("myBar");
+	elem.style.width = amount + "%";
+    elem.innerHTML = amount  + "%";
+}
+
+
+
+</script>
+
+<script>
+    // Get the modal
+    var modal = document.getElementById("myModal");
+    
+    // Get the button that opens the modal
+    var btn = document.getElementById("aboutBtn");
+    
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+    
+    // When the user clicks the button, open the modal 
+    btn.onclick = function() {
+      modal.style.display = "block";
+    }
+    
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+      modal.style.display = "none";
+    }
+    
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+    </script>
+
+
+</body>
+</html>
