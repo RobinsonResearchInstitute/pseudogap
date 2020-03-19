@@ -3,3 +3,5 @@
 <a href="dwaveTriangleEg.html">Triangular Pseudogap</a>
 <br>
 <a href="dwaveCosEg.html">cos(2&theta;) Pseudogap</a>
+<br>
+<a href="yrz.html">YRZ Model</a>
