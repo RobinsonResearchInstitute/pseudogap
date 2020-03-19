@@ -404,7 +404,7 @@ function calculateDF(){
     // Calculate the progress percentage.
     let progress = 0;//Math.round(i/list.length*100);  // Only send a progress update if the progress has changed
     // at least 1%.
-
+    let zeroGapReached = false;
     computeDos(0);
     for(let i = 0; i<NT_; i++){
         if(temperature_[i]==0){
@@ -418,7 +418,12 @@ function calculateDF(){
 
     for(let i = 0; i<NT_; i++){
         progress = Math.floor(i/(NT_-1)*100);
-        if(gap_[i]>0) computeDos(gap_[i]/1000);
+        if(!zeroGapReached){ 
+            computeDos(gap_[i]/1000);
+            if(gap_[i]==0){
+                zeroGapReached = true;
+            }
+        }
         if(temperature_[i]==0){
             entropy_[i] = 0; 
         }else{
