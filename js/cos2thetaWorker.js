@@ -1,3 +1,4 @@
+//Writen by James Storey, Robinson Research Institute, 2020.
 
 let previousProgress = 0;
 
