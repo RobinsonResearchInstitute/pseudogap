@@ -343,8 +343,16 @@ function calculateSusceptibility(alpha,Tc){
 	
 	for(let i = 0; i<NT_; i++){
 		if(temperature_[i]==0){
-			susceptibility_[i] = 0;
-			NSsusceptibility_[i] = 0;
+            if(Eg_==0){
+                NSsusceptibility_[i] = 5.788E-5*9.274E-24*4.0*Math.PI*1E-7*6.02E23;
+            }else{
+			    NSsusceptibility_[i] = 0;
+            }
+            if(alpha==0){
+                susceptibility_[i] = NSsusceptibility_[i];
+            }else{    
+			    susceptibility_[i] = 0;
+            }
 		}else{
 			susceptibility_[i] = Chi(alpha,Tc,temperature_[i]);
 			NSsusceptibility_[i] = Chin(temperature_[i]);
