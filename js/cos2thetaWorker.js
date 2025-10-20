@@ -444,9 +444,9 @@ function calculateSusceptibility(alpha,Tc){
 
 
 function Chi(alpha, Tc, T){
-	E1 = 0;
-	E2 = 0.0015*T;
-	dE = (E2-E1)/(NE-1);
+	E1_ = 0;
+	E2_ = 0.0015*T;
+	dE_ = (E2_-E1_)/(NE_-1);
 	let E = 0;
 	let th1 = 0;
 	let th2 = Math.PI/4.0;
@@ -467,32 +467,32 @@ function Chi(alpha, Tc, T){
 	if(th<thc_)
 		pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
 	del = d0*Math.cos(2.0*th);
-	E1 = pg;
-	E2 = 0.0015*T;
-	if(E1>E2){
-		E2=2.0*E1;
+	E1_ = pg;
+	E2_ = 0.0015*T;
+	if(E1_>E2_){
+		E2_=2.0*E1_;
 	}
-	dE = (E2-E1)/(NE-1);
+	dE_ = (E2_-E1_)/(NE_-1);
 	
-	x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+	x = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2));
 	
 	df = dfdE(x,T);
 	if(!isNaN(df)){
-		sum += 0.5*df*dE;
+		sum += 0.5*df*dE_;
 	}
 	
-	x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+	x = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2));
 	 df = dfdE(x,T);
 	if(!isNaN(df)){
-		sum += 0.5*df*dE;
+		sum += 0.5*df*dE_;
 	}
 
-	for(let i = 1; i<NE-1; i++){                
-		t = E1+i*dE;               
+	for(let i = 1; i<NE_-1; i++){                
+		t = E1_+i*dE_;               
 		x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
 		df = dfdE(x,T);
 		if(!isNaN(df)){
-			sum += df*dE;
+			sum += df*dE_;
 		}
 		
 	}
@@ -503,31 +503,31 @@ function Chi(alpha, Tc, T){
 	if(th<thc_)
 		pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
 	del = d0*Math.cos(2.0*th);
-	E1 = pg;
-	E2 = 0.0015*T;
-	if(E1>E2){
-		E2=2.0*E1;
+	E1_ = pg;
+	E2_ = 0.0015*T;
+	if(E1_>E2_){
+		E2_=2.0*E1_;
 	}
-	dE = (E2-E1)/(NE-1);
+	dE_ = (E2_-E1_)/(NE_-1);
 	
-	x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+	x = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2));
 	df = dfdE(x,T);
 	if(!isNaN(df)){
-		sum += 0.5*df*dE;
+		sum += 0.5*df*dE_;
 	}
 	
-	x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+	x = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2));
 	df = dfdE(x,T);
 	if(!isNaN(df)){
-		sum += 0.5*df*dE;
+		sum += 0.5*df*dE_;
 	}
 
-	for(let i = 1; i<NE-1; i++){                
-		t = E1+i*dE;               
+	for(let i = 1; i<NE_-1; i++){                
+		t = E1_+i*dE_;               
 		x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
 		df = dfdE(x,T);
 		if(!isNaN(df)){
-			sum += df*dE;
+			sum += df*dE_;
 		}
 		
 	}
@@ -540,31 +540,31 @@ function Chi(alpha, Tc, T){
 			pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
 		del = d0*Math.cos(2.0*th);
 		
-		E1 = pg;
-		E2 = 0.0015*T;
-		if(E1>E2){
-			E2=2.0*E1;
+		E1_ = pg;
+		E2_ = 0.0015*T;
+		if(E1_>E2_){
+			E2_=2.0*E1_;
 		}
-		dE = (E2-E1)/(NE-1);
+		dE_ = (E2_-E1_)/(NE_-1);
 		
-		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+		x = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2));
 		df = dfdE(x,T);
 		if(!isNaN(df)){
-			sum += 0.5*df*dE;
+			sum += 0.5*df*dE_;
 		}
 		
-		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+		x = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2));
 		df = dfdE(x,T);
 		if(!isNaN(df)){
-			sum += 0.5*df*dE;
+			sum += 0.5*df*dE_;
 		}
 
-		for(let i = 1; i<NE-1; i++){                
-			t = E1+i*dE;               
+		for(let i = 1; i<NE_-1; i++){                
+			t = E1_+i*dE_;               
 			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
 			df = dfdE(x,T);
 			if(!isNaN(df)){
-				sum += df*dE;
+				sum += df*dE_;
 			}
 			
 		}
@@ -717,6 +717,7 @@ function calculateLambda(mu, Delta, pg, T){
     }
     return sum*=dE_;
 }
+
 
 
 
