@@ -29,6 +29,7 @@ Alpha:
 
 <button onclick="setTChart(gamma_,'Gamma','mJ/mol/K&#xb2');setTChart2(NSgamma_,'Normal State','mJ/mol/K&#xb2')">Gamma</button>
 <button onclick="setTChart(entropy_,'Entropy','mJ/mol/K');setTChart2(NSentropy_,'Normal State','mJ/mol/K')">Entropy</button> 
+<button onclick="setTChart(susceptibility_,'Susceptibility','m&#xb3/mol');setTChart2(NSsusceptibility_,'Normal State','m&#xb3/mol')">Susceptibility</button>
 <button onclick="setTChart(DF_,'DeltaF','mJ/mol');setTChart2([],'','mJ/mol/K&#xb2')"">DeltaF</button>
 <button onclick="setTChart(gap_,'Gap','meV');setTChart2([],'','mJ/mol/K&#xb2')">Gap</button>
 <button onclick="setTChart(Dt_,'D(t)','');setTChart2([],'','mJ/mol/K&#xb2')">D(t)</button>
@@ -103,6 +104,8 @@ Eg: <input type="text" id="EgField">
 	let gap_ = [];
     let entropy_ = [];
     let NSentropy_ = [];
+    let susceptibility_ = [];
+    let NSsusceptibility_ = [];
     let temperature_ = [];
     let gamma_ = [];
     let NSgamma_ = [];
@@ -137,6 +140,8 @@ Eg: <input type="text" id="EgField">
         gap_ = new Array(NT_).fill(0);
         entropy_ = new Array(NT_).fill(0);
         NSentropy_ = new Array(NT_).fill(0);
+        susceptibility_ = new Array(NT_).fill(0);
+        NSsusceptibility_ = new Array(NT_).fill(0);
         //gamma_ = new Array(NT_).fill(0);
         //NSgamma_ = new Array(NT_).fill(0);
         DF_ = new Array(NT_).fill(0);
@@ -206,6 +211,13 @@ Eg: <input type="text" id="EgField">
             setTChart2(NSgamma_,'Normal State','mJ/mol/K\u00B2')
         }
 
+         else if (message.messageType == "Susceptibility") {
+            susceptibility_ = message.X;
+            NSsusceptibility_ = message.Xn;
+            //setTChart(susceptibility_,'Susceptibility','m\u00B3/mol');
+            //setTChart2(NSsusceptibility_,'Normal State','m\u00B3/mol')
+        }
+
         
         else if (message.messageType == "DF") {
             DF_ = message.F;
@@ -253,10 +265,10 @@ Eg: <input type="text" id="EgField">
     }
 
     function download_Tdata() {
-        var csv = 'T,t,t2,Delta,Gamma,GammaN,S,Sn,DS,DF,Dt,lambda\n';
+        var csv = 'T,t,t2,Delta,Gamma,GammaN,S,Sn,DS,DF,Dt,Chi,ChiN,lambda\n';
         
 		for(let i = 0; i<NT_; i++){
-			csv+=temperature_[i]+','+(temperature_[i]/Tc_)+','+Math.pow(temperature_[i]/Tc_,2)+','+gap_[i]+','+gamma_[i]+','+NSgamma_[i]+','+entropy_[i]+','+NSentropy_[i]+','+(entropy_[i]-NSentropy_[i])+','+DF_[i]+','+Dt_[i]+','+lambda_[i]+'\n';
+			csv+=temperature_[i]+','+(temperature_[i]/Tc_)+','+Math.pow(temperature_[i]/Tc_,2)+','+gap_[i]+','+gamma_[i]+','+NSgamma_[i]+','+entropy_[i]+','+NSentropy_[i]+','+(entropy_[i]-NSentropy_[i])+','+DF_[i]+','+Dt_[i]+','+susceptibility_[i]+','+NSsusceptibility_[i]+','+lambda_[i]+'\n';
 		}
 		
      
