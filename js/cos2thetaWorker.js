@@ -66,7 +66,7 @@ onmessage = function(event) {
     postMessage(
         {messageType: "Gamma", g: gamma_, gn: NSgamma_}
       );
-	calculateSusceptibility();
+	calculateSusceptibility(alpha_, Tc_);
     postMessage(
         {messageType: "Susceptibility", X: gamma_, Xn: NSgamma_}
       );
@@ -717,5 +717,6 @@ function calculateLambda(mu, Delta, pg, T){
     }
     return sum*=dE_;
 }
+
 
 
