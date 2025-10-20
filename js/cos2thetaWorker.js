@@ -23,7 +23,7 @@ let dE_ = (E2_-E1_)/(NE_-1);
 let gap_ = [];
 let entropy_ = [];
 let NSentropy_ = [];
-let susceptiblity_ = [];
+let susceptibility_ = [];
 let NSsusceptibility_ = [];
 let temperature_ = [];
 let gamma_ = [];
@@ -101,8 +101,8 @@ onmessage = function(event) {
     gap_ = new Array(NT_).fill(0);
     entropy_ = new Array(NT_).fill(0);
     NSentropy_ = new Array(NT_).fill(0);
-	susceptiblity_ = new Array(NT_).fill(0);
-    NSsusceptiblity_ = new Array(NT_).fill(0);
+	susceptibility_ = new Array(NT_).fill(0);
+    NSsusceptibility_ = new Array(NT_).fill(0);
     //gamma_ = new Array(NT_).fill(0);
     //NSgamma_ = new Array(NT_).fill(0);
     DF_ = new Array(NT_).fill(0);
@@ -421,16 +421,16 @@ function Sn(T){
 }
 
 
-function calculateSusceptiblity(alpha,Tc){
+function calculateSusceptibility(alpha,Tc){
 	// Calculate the progress percentage.
     let progress = 0;//Math.round(i/list.length*100);  // Only send a progress update if the progress has changed
 	
 	for(let i = 0; i<NT_; i++){
 		if(temperature_[i]==0){
-			susceptiblity_[i] = 0;
+			susceptibility_[i] = 0;
 			NSsusceptibility_[i] = 0;
 		}else{
-			susceptiblity_[i] = Chi(alpha,Tc,temperature_[i]);
+			susceptibility_[i] = Chi(alpha,Tc,temperature_[i]);
 			NSsusceptibility_[i] = Chin(temperature_[i]);
 		}    
 		 if (progress != previousProgress) {
@@ -717,4 +717,5 @@ function calculateLambda(mu, Delta, pg, T){
     }
     return sum*=dE_;
 }
+
 
