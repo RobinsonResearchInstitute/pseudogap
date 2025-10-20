@@ -23,6 +23,8 @@ let dE_ = (E2_-E1_)/(NE_-1);
 let gap_ = [];
 let entropy_ = [];
 let NSentropy_ = [];
+let susceptiblity_ = [];
+let NSsusceptibility_ = [];
 let temperature_ = [];
 let gamma_ = [];
 let NSgamma_ = [];
@@ -64,6 +66,10 @@ onmessage = function(event) {
     postMessage(
         {messageType: "Gamma", g: gamma_, gn: NSgamma_}
       );
+	calculateSusceptibility();
+    postMessage(
+        {messageType: "Susceptibility", X: gamma_, Xn: NSgamma_}
+      );
     calculateDF();
     postMessage(
         {messageType: "DF", F: DF_}
@@ -95,6 +101,8 @@ onmessage = function(event) {
     gap_ = new Array(NT_).fill(0);
     entropy_ = new Array(NT_).fill(0);
     NSentropy_ = new Array(NT_).fill(0);
+	susceptiblity_ = new Array(NT_).fill(0);
+    NSsusceptiblity_ = new Array(NT_).fill(0);
     //gamma_ = new Array(NT_).fill(0);
     //NSgamma_ = new Array(NT_).fill(0);
     DF_ = new Array(NT_).fill(0);
@@ -413,6 +421,167 @@ function Sn(T){
 }
 
 
+function calculateSusceptiblity(alpha,Tc){
+	// Calculate the progress percentage.
+    let progress = 0;//Math.round(i/list.length*100);  // Only send a progress update if the progress has changed
+	
+	for(let i = 0; i<NT_; i++){
+		if(temperature_[i]==0){
+			susceptiblity_[i] = 0;
+			NSsusceptibility_[i] = 0;
+		}else{
+			susceptiblity_[i] = Chi(alpha,Tc,temperature_[i]);
+			NSsusceptibility_[i] = Chin(temperature_[i]);
+		}    
+		 if (progress != previousProgress) {
+            postMessage(
+            {messageType: "Progress", data: progress}
+            );
+            previousProgress = progress;
+        }
+	}
+}
+
+
+function Chi(alpha, Tc, T){
+	E1 = 0;
+	E2 = 0.0015*T;
+	dE = (E2-E1)/(NE-1);
+	let E = 0;
+	let th1 = 0;
+	let th2 = Math.PI/4.0;
+	const Nth = 200;
+	let dth = (th2-th1)/(Nth-1);
+	let th = 0;
+	let t = 0;
+	let df = 0;
+	let sum = 0;
+	let del = 0;
+	let d0 = delta(alpha,Tc,T);
+	let pg = 0;
+	let ns = 0;
+	let x = 0;
+	
+	th = th1;
+	pg = 0;
+	if(th<thc_)
+		pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
+	del = d0*Math.cos(2.0*th);
+	E1 = pg;
+	E2 = 0.0015*T;
+	if(E1>E2){
+		E2=2.0*E1;
+	}
+	dE = (E2-E1)/(NE-1);
+	
+	x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+	
+	df = dfdE(x,T);
+	if(!isNaN(df)){
+		sum += 0.5*df*dE;
+	}
+	
+	x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+	 df = dfdE(x,T);
+	if(!isNaN(df)){
+		sum += 0.5*df*dE;
+	}
+
+	for(let i = 1; i<NE-1; i++){                
+		t = E1+i*dE;               
+		x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
+		df = dfdE(x,T);
+		if(!isNaN(df)){
+			sum += df*dE;
+		}
+		
+	}
+	
+	
+	th = th2;
+	pg = 0;
+	if(th<thc_)
+		pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
+	del = d0*Math.cos(2.0*th);
+	E1 = pg;
+	E2 = 0.0015*T;
+	if(E1>E2){
+		E2=2.0*E1;
+	}
+	dE = (E2-E1)/(NE-1);
+	
+	x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+	df = dfdE(x,T);
+	if(!isNaN(df)){
+		sum += 0.5*df*dE;
+	}
+	
+	x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+	df = dfdE(x,T);
+	if(!isNaN(df)){
+		sum += 0.5*df*dE;
+	}
+
+	for(let i = 1; i<NE-1; i++){                
+		t = E1+i*dE;               
+		x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
+		df = dfdE(x,T);
+		if(!isNaN(df)){
+			sum += df*dE;
+		}
+		
+	}
+	
+
+	for(let j = 1; j<Nth-1; j++){
+		th = th1+j*dth;
+		pg = 0;
+		if(th<thc_)
+			pg = Eg_*Math.cos(2.0*Math.PI*th/4.0/thc_);
+		del = d0*Math.cos(2.0*th);
+		
+		E1 = pg;
+		E2 = 0.0015*T;
+		if(E1>E2){
+			E2=2.0*E1;
+		}
+		dE = (E2-E1)/(NE-1);
+		
+		x = Math.sqrt(Math.pow(E1,2)+Math.pow(del,2));
+		df = dfdE(x,T);
+		if(!isNaN(df)){
+			sum += 0.5*df*dE;
+		}
+		
+		x = Math.sqrt(Math.pow(E2,2)+Math.pow(del,2));
+		df = dfdE(x,T);
+		if(!isNaN(df)){
+			sum += 0.5*df*dE;
+		}
+
+		for(let i = 1; i<NE-1; i++){                
+			t = E1+i*dE;               
+			x = Math.sqrt(Math.pow(t,2)+Math.pow(del,2));
+			df = dfdE(x,T);
+			if(!isNaN(df)){
+				sum += df*dE;
+			}
+			
+		}
+
+	}    
+		
+	 return sum*=(-dth*4.0/Math.PI*2.0*5.788E-5*9.274E-24*4.0*Math.PI*1E-7*6.02E23); //muB = 5.788E-5 eV/T or 9.274E-24 J/T, mu0 = 4PiE-7, NA = 6.02E23. Should give susceptibility in m3/mol.
+
+}
+
+function Chin(T){
+	return Chi(0,Tc_,T);
+}
+
+
+
+
 function calculateDelta(){
     for(let i=0; i<NT_; i++){
         gap_[i] = 1E3*delta(alpha_,Tc_,temperature_[i]);
@@ -548,3 +717,4 @@ function calculateLambda(mu, Delta, pg, T){
     }
     return sum*=dE_;
 }
+
