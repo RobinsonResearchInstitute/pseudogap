@@ -23,6 +23,8 @@ let dE_ = (E2_-E1_)/(NE_-1);
 let gap_ = [];
 let entropy_ = [];
 let NSentropy_ = [];
+let susceptibility_ = [];
+let NSsusceptibility_ = [];
 let temperature_ = [];
 let gamma_ = [];
 let NSgamma_ = [];
@@ -64,6 +66,10 @@ onmessage = function(event) {
     postMessage(
         {messageType: "Gamma", g: gamma_, gn: NSgamma_}
       );
+    calculateSusceptibility(alpha_, Tc_);
+    postMessage(
+        {messageType: "Susceptibility", X: susceptibility_, Xn: NSsusceptibility_}
+      );
     calculateDF();
     postMessage(
         {messageType: "DF", F: DF_}
@@ -95,6 +101,8 @@ onmessage = function(event) {
     gap_ = new Array(NT_).fill(0);
     entropy_ = new Array(NT_).fill(0);
     NSentropy_ = new Array(NT_).fill(0);
+    susceptibility_ = new Array(NT_).fill(0);
+    NSsusceptibility_ = new Array(NT_).fill(0);
     //gamma_ = new Array(NT_).fill(0);
     //NSgamma_ = new Array(NT_).fill(0);
     DF_ = new Array(NT_).fill(0);
@@ -325,6 +333,125 @@ function calculateDF(){
 
 function Sn(T){
     return S(0,0,T);
+}
+
+
+
+function calculateSusceptibility(alpha,Tc){
+	// Calculate the progress percentage.
+    let progress = 0;//Math.round(i/list.length*100);  // Only send a progress update if the progress has changed
+	
+	for(let i = 0; i<NT_; i++){
+		if(temperature_[i]==0){
+			susceptibility_[i] = 0;
+			NSsusceptibility_[i] = 0;
+		}else{
+			susceptibility_[i] = Chi(alpha,Tc,temperature_[i]);
+			NSsusceptibility_[i] = Chin(temperature_[i]);
+		}    
+		 if (progress != previousProgress) {
+            postMessage(
+            {messageType: "Progress", data: progress}
+            );
+            previousProgress = progress;
+        }
+	}
+}
+
+
+function Chi(alpha, Tc, T){
+	E1_ = 0;
+    E2_ = 0.0015*T;
+    dE_ = (E2_-E1_)/(NE_-1);
+    let E = 0;
+    let th1 = 0;
+    let th2 = Math.PI/4.0;
+    const Nth = 200;
+    let dth = (th2-th1)/(Nth-1);
+    let th = 0;
+    
+    let df = 0;
+    let sum = 0;
+    let del = 0;
+    let eg = 0;
+    let d0 = delta(alpha,Tc,T);
+    
+        del = d0*Math.cos(2.0*th1);   
+        eg = Eg_*Math.cos(2.0*th1); 
+        //E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(eg,2));
+        df = dfdE(E,T);
+        if(!isNaN(df))
+        sum += 0.5*0.5*df;
+
+
+        //E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(eg,2));
+        df = dfdE(E,T);
+        if(!isNaN(df))
+        sum += 0.5*0.5*df;
+
+        for(let i = 1; i<NE_-1; i++){  
+            //E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(eg,2));
+            df = dfdE(E,T);
+            if(!isNaN(df))
+            sum+=0.5*df;
+        }
+
+        del = d0*Math.cos(2.0*th2);
+        eg = Eg_*Math.cos(2.0*th2);      
+        //E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(eg,2));
+        df = dfdE(E,T);
+        if(!isNaN(df))
+        sum += 0.5*0.5*df;
+
+        //E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(eg,2));
+        df = dfdE(E,T);
+        if(!isNaN(df))
+        sum += 0.5*0.5*df;
+
+        for(let i = 1; i<NE_-1; i++){  
+            //E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(eg,2));
+            df = dfdE(E,T);
+            if(!isNaN(df))
+            sum+=0.5*df;
+        }
+
+    for(let j = 1; j<Nth-1; j++){
+        th = th1+j*dth;
+        del = d0*Math.cos(2.0*th);    
+        eg = Eg_*Math.cos(2.0*th);    
+        //E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(eg,2));
+        df = dfdE(E,T);
+        if(!isNaN(df))
+        sum += 0.5*df;
+
+        //E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(eg,2));
+        df = dfdE(E,T);
+        if(!isNaN(df))
+        sum += 0.5*df;
+
+        for(let i = 1; i<NE_-1; i++){  
+            //E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(eg,2));
+            df = dfdE(E,T);
+            sum+=df;
+            //if(isNaN(sum)) console.log(f+' '+T);
+        }
+    }  
+		
+	 return sum*=(-dE_*dth*4.0/Math.PI*2.0*5.788E-5*9.274E-24*4.0*Math.PI*1E-7*6.02E23); //muB = 5.788E-5 eV/T or 9.274E-24 J/T, mu0 = 4PiE-7, NA = 6.02E23. Should give susceptibility in m3/mol.
+
+}
+
+function Chin(T){
+	return Chi(0,Tc_,T);
 }
 
 
