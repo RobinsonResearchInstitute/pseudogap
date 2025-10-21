@@ -244,22 +244,22 @@ function calculateDF(){
     const Nth = 200;
     let dth = (th2-th1)/(Nth-1);
     let th = 0;
-    
+    let pg = 0;
     let f = 0;
     let fw = 0;
     let sum = 0;
     let del = 0;
     let d0 = delta(alpha,Tc,T);
-    
+        pg = Eg_*Math.cos(2.0*th1)
         del = d0*Math.cos(2.0*th1);    
-        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(pg,2));
         f = fermi(E,0,T);
         fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
         //if(f>0)
         if(!isNaN(fw))
         sum += 0.5*0.5*fw;
 
-        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(pg,2));
         f = fermi(E,0,T);
         //if(f>0)
         fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
@@ -267,7 +267,7 @@ function calculateDF(){
         sum += 0.5*0.5*fw;
 
         for(let i = 1; i<NE_-1; i++){  
-            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(pg,2));
             f = fermi(E,0,T);
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             //if(f>0)
@@ -275,15 +275,16 @@ function calculateDF(){
             sum+=0.5*fw;
         }
 
+        pg = Eg_*Math.cos(2.0*th2)
         del = d0*Math.cos(2.0*th2);    
-        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(pg,2));
         f = fermi(E,0,T);
         fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
         //if(f>0)
         if(!isNaN(fw))
         sum += 0.5*0.5*fw;
 
-        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(pg,2));
         f = fermi(E,0,T);
         fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
         //if(f>0)
@@ -291,7 +292,7 @@ function calculateDF(){
         sum += 0.5*0.5*fw;
 
         for(let i = 1; i<NE_-1; i++){  
-            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(pg,2));
             f = fermi(E,0,T);
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             //if(f>0)
@@ -301,15 +302,16 @@ function calculateDF(){
 
     for(let j = 1; j<Nth-1; j++){
         th = th1+j*dth;
+        pg = Eg_*Math.cos(2.0*th)
         del = d0*Math.cos(2.0*th);    
-        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E1_,2)+Math.pow(del,2)+Math.pow(pg,2));
         f = fermi(E,0,T);
         fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
         //if(f>0)
         if(!isNaN(fw))
         sum += 0.5*fw;
 
-        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+        E = Math.sqrt(Math.pow(E2_,2)+Math.pow(del,2)+Math.pow(pg,2));
         f = fermi(E,0,T);
         //if(f>0)
         fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
@@ -317,7 +319,7 @@ function calculateDF(){
         sum += 0.5*fw;
 
         for(let i = 1; i<NE_-1; i++){  
-            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(Eg_*Math.cos(2.0*th),2));
+            E = Math.sqrt(Math.pow(E1_+i*dE_,2)+Math.pow(del,2)+Math.pow(pg,2));
             f = fermi(E,0,T);
             fw = f*Math.log(f)+(1.0-f)*Math.log(1.0-f);
             if(!isNaN(fw))
